@@ -15,7 +15,13 @@ export default function Home() {
 
   // 在客户端设置默认日期，避免 hydration 错误
   useEffect(() => {
-    setDate(new Date().toISOString().split('T')[0]);
+    // 从 localStorage 恢复日期，如果没有则使用前一天
+    const savedDate = localStorage.getItem('lastScreeningDate');
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const defaultDate = yesterday.toISOString().split('T')[0];
+    
+    setDate(savedDate || defaultDate);
     
     // 从 localStorage 恢复筛选结果
     const savedTaskId = localStorage.getItem('lastTaskId');
@@ -66,9 +72,14 @@ export default function Home() {
     setTaskResult(null);
     
     try {
+      const screeningDate = date || new Date().toISOString().split('T')[0];
+      
+      // 保存选择的日期到 localStorage
+      localStorage.setItem('lastScreeningDate', screeningDate);
+      
       // 创建筛选任务
       const response = await apiClient.createScreening({
-        date: date || new Date().toISOString().split('T')[0],
+        date: screeningDate,
       });
       
       setTaskId(response.task_id);
@@ -77,6 +88,12 @@ export default function Home() {
       console.error('筛选错误:', err);
       setLoading(false);
     }
+  }
+  
+  // 当用户更改日期时保存到 localStorage
+  function handleDateChange(newDate: string) {
+    setDate(newDate);
+    localStorage.setItem('lastScreeningDate', newDate);
   }
 
   return (
@@ -106,7 +123,7 @@ export default function Home() {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 disabled={loading}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
               />
