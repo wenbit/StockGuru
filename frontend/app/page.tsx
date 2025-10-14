@@ -191,7 +191,10 @@ export default function Home() {
                 </h3>
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => window.open(`http://localhost:8000/api/v1/screening/${taskId}/export/excel`, '_blank')}
+                    onClick={() => {
+                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                      window.open(`${apiUrl}/api/v1/screening/${taskId}/export/excel`, '_blank');
+                    }}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
                   >
                     <span>📊</span>

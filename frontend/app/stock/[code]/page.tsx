@@ -30,7 +30,8 @@ export default function StockDetailPage() {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/stock/${code}/info`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/stock/${code}/info`);
       
       if (!response.ok) {
         throw new Error('获取股票信息失败');
