@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockGuru 筛选报告 - {{ date }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .meta {
+            display: flex;
+            justify-content: space-around;
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .meta-item {
+            text-align: center;
+        }
+        
+        .meta-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .meta-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .stock-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            page-break-inside: avoid;
+        }
+        
+        .stock-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+        
+        .stock-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .rank-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .rank-gold {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        }
+        
+        .rank-silver {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        
+        .rank-normal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .stock-info h2 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .stock-code {
+            font-size: 16px;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .stock-price {
+            text-align: right;
+        }
+        
+        .price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #212529;
+        }
+        
+        .change {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .change-up {
+            color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .change-down {
+            color: #28a745;
+            background: #d4edda;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            color: #6c757d;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        .disclaimer {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+            color: #856404;
+        }
+        
+        .disclaimer strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+            
+            .stock-card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>📈 StockGuru 筛选报告</h1>
+            <div class="subtitle">股票短线复盘助手</div>
+        </div>
+        
+        <!-- 元数据 -->
+        <div class="meta">
+            <div class="meta-item">
+                <div class="meta-label">筛选日期</div>
+                <div class="meta-value">{{ date }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">筛选数量</div>
+                <div class="meta-value">{{ result_count }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">任务ID</div>
+                <div class="meta-value">{{ task_id[:8] }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">生成时间</div>
+                <div class="meta-value">{{ generated_at }}</div>
+            </div>
+        </div>
+        
+        <!-- 内容 -->
+        <div class="content">
+            {% for stock in results %}
+            <div class="stock-card">
+                <div class="stock-header">
+                    <div class="stock-title">
+                        <div class="rank-badge {% if stock.final_rank <= 3 %}rank-gold{% elif stock.final_rank <= 10 %}rank-silver{% else %}rank-normal{% endif %}">
+                            {{ stock.final_rank }}
+                        </div>
+                        <div class="stock-info">
+                            <h2>{{ stock.stock_name }}</h2>
+                            <div class="stock-code">{{ stock.stock_code }}</div>
+                        </div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="price">¥{{ "%.2f"|format(stock.close_price) }}</div>
+                        <div class="change {% if stock.change_pct > 0 %}change-up{% else %}change-down{% endif %}">
+                            {% if stock.change_pct > 0 %}+{% endif %}{{ "%.2f"|format(stock.change_pct) }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-label">动量分数</div>
+                        <div class="metric-value">{{ "%.2f"|format(stock.momentum_score) }}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">综合评分</div>
+                        <div class="metric-value">{{ "%.2f"|format(stock.comprehensive_score) }}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">成交量</div>
+                        <div class="metric-value">{{ "%.2f"|format(stock.volume / 10000) }}万手</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- 免责声明 -->
+            <div class="disclaimer">
+                <strong>⚠️ 免责声明</strong>
+                <p>本报告提供的数据和分析仅供参考，不构成任何投资建议。股市有风险，投资需谨慎。请根据自身情况做出投资决策。</p>
+            </div>
+        </div>
+        
+        <!-- 页脚 -->
+        <div class="footer">
+            <p><strong>StockGuru v0.9</strong> - 股票短线复盘助手</p>
+            <p>报告生成时间: {{ generated_at }}</p>
+            <p>© 2025 StockGuru. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

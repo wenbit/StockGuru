@@ -1,0 +1,57 @@
+"""
+StockGuru FastAPI 主程序
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api import screening, stock
+from app.core.config import settings
+import logging
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+)
+
+app = FastAPI(
+    title="StockGuru API",
+    version="2.0.0",
+    description="股票短线复盘助手 API",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS 配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://*.vercel.app",
+        settings.FRONTEND_URL,
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 注册路由
+app.include_router(screening.router, prefix="/api/v1", tags=["Screening"])
+app.include_router(stock.router, prefix="/api/v1", tags=["Stock"])
+
+@app.get("/")
+async def root():
+    """API 根路径"""
+    return {
+        "message": "StockGuru API",
+        "version": "2.0.0",
+        "docs": "/docs"
+    }
+
+@app.get("/health")
+async def health():
+    """健康检查"""
+    return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
