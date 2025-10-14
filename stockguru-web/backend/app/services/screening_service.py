@@ -37,6 +37,31 @@ class ScreeningService:
     ) -> Dict:
         """创建筛选任务"""
         try:
+            # 检查缓存（对于历史日期）
+            from app.services.cache_service import get_cache_service
+            cache_service = get_cache_service()
+            
+            cache_params = {
+                'date': date,
+                'volume_top_n': volume_top_n,
+                'hot_top_n': hot_top_n
+            }
+            cached_result = cache_service.get('screening', cache_params)
+            
+            if cached_result:
+                logger.info(f"使用缓存的筛选结果: {date}")
+                task_id = cached_result['task_id']
+                
+                # 恢复到内存
+                _tasks_store[task_id] = cached_result['task']
+                _results_store[task_id] = cached_result['results']
+                
+                return {
+                    "task_id": task_id,
+                    "status": "completed",
+                    "message": "使用缓存结果"
+                }
+            
             task_id = str(uuid.uuid4())
             
             # 尝试保存到 Supabase
@@ -296,6 +321,22 @@ class ScreeningService:
                     }).eq("id", task_id).execute()
                 except: pass
             
+            # 7. 保存到缓存（对于历史日期）
+            from app.services.cache_service import get_cache_service
+            cache_service = get_cache_service()
+            cache_params = {
+                'date': date,
+                'volume_top_n': volume_top_n,
+                'hot_top_n': hot_top_n
+            }
+            cache_data = {
+                'task_id': task_id,
+                'task': _tasks_store[task_id],
+                'results': results
+            }
+            cache_service.set('screening', cache_params, cache_data)
+            logger.info(f"筛选结果已缓存: {date}")
+            
             logger.info(f"筛选完成: {len(results)} 只股票")
             
         except Exception as e:
@@ -320,6 +361,10 @@ class ScreeningService:
     async def get_task_result(self, task_id: str) -> Dict:
         """获取任务结果"""
         supabase = self._get_supabase()
+        
+        # 先检查缓存（对于历史日期）
+        from app.services.cache_service import get_cache_service
+        cache_service = get_cache_service()
         
         # 先从内存获取
         if task_id in _tasks_store:
