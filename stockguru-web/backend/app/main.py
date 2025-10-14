@@ -24,12 +24,8 @@ app = FastAPI(
 # CORS 配置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://*.vercel.app",
-        settings.FRONTEND_URL,
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # 允许所有来源（生产环境建议指定具体域名）
+    allow_credentials=False,  # 允许所有来源时必须设为 False
     allow_methods=["*"],
     allow_headers=["*"],
 )
