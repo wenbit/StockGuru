@@ -70,22 +70,13 @@ export default function StockDetailPage() {
       <div className="max-w-7xl mx-auto">
         {/* 头部导航 */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <Link 
-              href="/"
-              className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow transition-colors flex items-center gap-2"
-            >
-              <span>←</span>
-              <span>返回首页</span>
-            </Link>
-            <Link 
-              href="/history"
-              className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow transition-colors flex items-center gap-2"
-            >
-              <span>📚</span>
-              <span>历史记录</span>
-            </Link>
-          </div>
+          <Link 
+            href="/"
+            className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow transition-colors flex items-center gap-2"
+          >
+            <span>←</span>
+            <span>返回首页</span>
+          </Link>
         </div>
 
         {/* 错误提示 */}
@@ -103,7 +94,7 @@ export default function StockDetailPage() {
                 {stockInfo?.name || code}
               </h1>
               <div className="flex items-center gap-4 text-gray-600">
-                <span className="text-xl font-mono">{code}</span>
+                <span className="text-lg">{code}</span>
                 {stockInfo?.industry && (
                   <>
                     <span className="text-gray-400">|</span>

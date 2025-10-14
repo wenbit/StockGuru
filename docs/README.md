@@ -1,133 +1,89 @@
-# StockGuru 文档中心
+# 📚 StockGuru 文档目录
 
-欢迎来到 StockGuru 文档中心！这里包含了项目的所有文档和资料。
+本目录包含 StockGuru 项目的所有文档，按类别组织。
 
-## 📚 文档导航
+## 📁 目录结构
 
-### 🚀 快速开始
-- [快速启动指南](../stockguru-web/QUICKSTART.md) - 5分钟快速开始
-- [项目完成总结](../PROJECT-COMPLETE.md) - 项目整体介绍
-- [功能更新说明](../FEATURE-UPDATE.md) - 最新功能介绍
-
-### 📖 开发文档
-- [Web 迁移方案](../web-migration-plan.md) - 技术架构设计
-- [实现指南](../web-implementation-guide.md) - 详细实现步骤
-- [项目状态](../stockguru-web/PROJECT-STATUS.md) - 开发进度追踪
-
-### 🔧 技术文档
-- [后端 README](../stockguru-web/backend/README.md) - 后端使用说明
-- [前端 README](../frontend/README.md) - 前端开发指南
-- [数据库 Schema](../stockguru-web/database/schema.sql) - 数据库表结构
-
-### 🐛 问题修复
-- [修复记录 #1](../FIXES.md) - React Hydration 错误修复
-- [修复记录 #2](../FIXES-2.md) - 后端启动问题修复
-- [实现状态](../IMPLEMENTATION-STATUS.md) - 真实数据接口实现
-
-### 📝 开发故事
-- [短线助手开发记录](./开发故事-短线助手开发记录.md) - 项目灵感来源和核心思路
-
-### 🛠️ 工具脚本
-- [一键启动](../start-all.sh) - 启动所有服务
-- [一键停止](../stop-all.sh) - 停止所有服务
-- [系统测试](../test-system.sh) - 测试系统状态
-- [系统诊断](../diagnose.sh) - 诊断系统问题
-
----
-
-## 🎯 按需求查找
-
-### 我想快速开始使用
-→ [快速启动指南](../stockguru-web/QUICKSTART.md)
-
-### 我想了解技术架构
-→ [Web 迁移方案](../web-migration-plan.md)
-
-### 我遇到了问题
-→ [系统诊断](../diagnose.sh) + [问题修复记录](../FIXES.md)
-
-### 我想参与开发
-→ [实现指南](../web-implementation-guide.md) + [项目状态](../stockguru-web/PROJECT-STATUS.md)
-
-### 我想了解项目背景
-→ [开发故事](./开发故事-短线助手开发记录.md)
-
----
-
-## 📊 项目概览
-
-### 核心功能
-- ✅ 自动筛选强势股
-- ✅ 成交量和热度综合评分
-- ✅ 动量因子计算
-- ✅ 实时进度显示
-- ✅ 可视化结果展示
-
-### 技术栈
-- **前端**: Next.js 14 + TypeScript + Tailwind CSS
-- **后端**: FastAPI + Python 3.12
-- **数据库**: Supabase (PostgreSQL)
-- **数据源**: pywencai + akshare
-
-### 项目结构
 ```
-StockGuru/
-├── docs/                    # 📚 文档中心
-├── stockguru-web/          # 🔧 Web 版后端
-│   ├── backend/            # FastAPI 后端
-│   ├── database/           # 数据库设计
-│   └── frontend-examples/  # 前端示例
-├── frontend/               # 🎨 Next.js 前端
-├── *.sh                    # 🛠️ 工具脚本
-└── *.md                    # 📝 文档文件
+docs/
+├── README.md                    # 本文件
+├── reports/                     # 📊 开发报告
+├── guides/                      # 📖 使用指南
+├── releases/                    # 🚀 版本发布
+└── archive/                     # 📦 历史归档
 ```
 
+## 📊 reports/ - 开发报告
+
+功能开发和问题修复的详细报告：
+
+### 最新报告
+- `项目文件整理完成报告.md` - 项目文件规范化整理
+- `删除历史记录功能说明.md` - 历史记录功能删除
+- `筛选规则说明更新.md` - 筛选规则完善
+- `导出功能更新说明.md` - 导出功能更新
+
+### 功能实现
+- `Excel导出功能实现报告.md` - Excel 导出功能实现
+- `系统架构与功能需求分析报告.md` - 完整的系统架构分析
+- `技术指标功能完成报告.md` - 技术指标实现
+- `股票详情页完成报告.md` - 详情页功能实现
+- `CLI工具完成报告.md` - CLI 工具开发
+
+### 问题修复
+- `历史记录Hydration错误修复报告.md` - Hydration 错误修复
+- `历史记录字段名错误修复报告.md` - 字段名不匹配修复
+- `导出报告和历史记录修复报告.md` - 导出功能修复
+- `K线图修复完成报告.md` - K线图功能修复
+- `PRD需求核对报告.md` - 需求核对报告
+
+## 📖 guides/ - 使用指南
+
+用户和开发者指南：
+
+- `CLI使用指南.md` - 命令行工具使用说明
+- `GIT使用说明.md` - Git 操作指南
+- `QUICK-REFERENCE.md` - 快速参考手册
+- `web-implementation-guide.md` - Web 实现指南
+- `web-migration-plan.md` - Web 迁移计划
+
+## 🚀 releases/ - 版本发布
+
+版本发布说明和路线图：
+
+- `RELEASE-v0.8.md` - v0.8 版本发布说明
+- `RELEASE-v0.9.md` - v0.9 版本发布说明
+- `v0.9发布说明.md` - v0.9 详细发布说明
+- `ROADMAP.md` - 项目路线图
+
+## 📦 archive/ - 历史归档
+
+历史开发文档和总结：
+
+- `DEVELOPMENT-PLAN.md` - 开发计划
+- `PROJECT-COMPLETE.md` - 项目完成报告
+- `PROJECT-SUMMARY.md` - 项目总结
+- `PROGRESS-*.md` - 进度报告
+- `TODO.md` - 待办事项
+- `FIXES-*.md` - 修复记录
+- `FEATURE-*.md` - 功能分析
+- 其他历史文档...
+
+## 🔍 快速查找
+
+### 想了解系统架构？
+👉 `reports/系统架构与功能需求分析报告.md`
+
+### 想学习如何使用？
+👉 `guides/CLI使用指南.md`  
+👉 `guides/QUICK-REFERENCE.md`
+
+### 想查看最新版本？
+👉 `releases/RELEASE-v0.9.md`
+
+### 想了解某个功能的实现？
+👉 `reports/` 目录下查找对应的报告
+
 ---
 
-## 🚀 快速命令
-
-```bash
-# 启动所有服务
-./start-all.sh
-
-# 停止所有服务
-./stop-all.sh
-
-# 测试系统
-./test-system.sh
-
-# 诊断问题
-./diagnose.sh
-
-# 查看后端日志
-tail -f stockguru-web/backend/backend.log
-
-# 查看前端日志
-tail -f frontend/frontend.log
-```
-
----
-
-## 📞 获取帮助
-
-遇到问题时：
-1. 查看对应的文档
-2. 运行 `./diagnose.sh` 诊断系统
-3. 查看日志文件
-4. 参考问题修复记录
-
----
-
-## 🎉 贡献指南
-
-欢迎贡献代码和文档！
-
-1. Fork 项目
-2. 创建特性分支
-3. 提交更改
-4. 推送到分支
-5. 创建 Pull Request
-
----
-
-**StockGuru - 让短线复盘更高效！** 🚀
+*最后更新: 2025-10-15*

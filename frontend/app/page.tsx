@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { apiClient, TaskResult, StockResult } from '@/lib/api-client';
 import StockChart from '@/components/StockChart';
 import StockCard from '@/components/StockCard';
-import Link from 'next/link';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -17,6 +16,19 @@ export default function Home() {
   // 在客户端设置默认日期，避免 hydration 错误
   useEffect(() => {
     setDate(new Date().toISOString().split('T')[0]);
+    
+    // 从 localStorage 恢复筛选结果
+    const savedTaskId = localStorage.getItem('lastTaskId');
+    const savedTaskResult = localStorage.getItem('lastTaskResult');
+    
+    if (savedTaskId && savedTaskResult) {
+      try {
+        setTaskId(savedTaskId);
+        setTaskResult(JSON.parse(savedTaskResult));
+      } catch (e) {
+        console.error('恢复筛选结果失败:', e);
+      }
+    }
   }, []);
 
   // 轮询任务结果
@@ -27,6 +39,12 @@ export default function Home() {
       try {
         const result = await apiClient.getScreeningResult(taskId);
         setTaskResult(result);
+
+        // 保存到 localStorage
+        if (result.status === 'completed') {
+          localStorage.setItem('lastTaskId', taskId);
+          localStorage.setItem('lastTaskResult', JSON.stringify(result));
+        }
 
         // 如果任务完成或失败，停止轮询
         if (result.status === 'completed' || result.status === 'failed') {
@@ -66,19 +84,9 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         {/* 标题 */}
         <div className="text-center mb-12">
-          <div className="flex justify-between items-center mb-4">
-            <div></div>
-            <h1 className="text-5xl font-bold text-gray-900">
-              📈 StockGuru
-            </h1>
-            <Link 
-              href="/history"
-              className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow transition-colors flex items-center gap-2"
-            >
-              <span>📚</span>
-              <span>历史记录</span>
-            </Link>
-          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            📈 StockGuru
+          </h1>
           <p className="text-xl text-gray-600">
             股票短线复盘助手
           </p>
@@ -183,10 +191,10 @@ export default function Home() {
                 </h3>
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => window.open(`http://localhost:8000/api/v1/screening/${taskId}/export`, '_blank')}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                    onClick={() => window.open(`http://localhost:8000/api/v1/screening/${taskId}/export/excel`, '_blank')}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
                   >
-                    <span>📄</span>
+                    <span>📊</span>
                     <span>导出报告</span>
                   </button>
                   <div className="text-sm text-gray-500">
@@ -235,17 +243,131 @@ export default function Home() {
           )}
         </div>
 
-        {/* 功能说明 */}
+        {/* 筛选规则说明 */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-            功能说明
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-3">
+            📋 筛选规则说明
           </h2>
-          <ul className="space-y-2 text-gray-600">
-            <li>✅ 自动筛选高动量股票</li>
-            <li>✅ 成交量和热度综合评分</li>
-            <li>✅ 实时数据分析</li>
-            <li>✅ 可视化图表展示</li>
-          </ul>
+          
+          <div className="space-y-6">
+            {/* 动量分数 */}
+            <div className="bg-blue-50 rounded-lg p-5">
+              <h3 className="text-lg font-bold text-blue-900 mb-3">📈 动量分数计算</h3>
+              <div className="space-y-2 text-gray-700">
+                <p className="font-semibold">计算公式：</p>
+                <div className="bg-white rounded p-3 font-mono text-sm">
+                  动量分数 = 斜率 × R² × 10000
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                  <li><strong>斜率 (Slope)</strong>: 通过线性回归计算过去25天的价格趋势，衡量上涨速度</li>
+                  <li><strong>R² (决定系数)</strong>: 0-1之间，衡量趋势的稳定性，越接近1越稳定</li>
+                  <li><strong>放大系数 10000</strong>: 便于比较和排序</li>
+                </ul>
+                <p className="text-sm mt-2 text-blue-800">
+                  💡 <strong>解读</strong>: 分数越高表示股票上涨趋势越强且越稳定
+                </p>
+              </div>
+            </div>
+
+            {/* 综合评分 */}
+            <div className="bg-green-50 rounded-lg p-5">
+              <h3 className="text-lg font-bold text-green-900 mb-3">⚖️ 综合评分计算</h3>
+              <div className="space-y-2 text-gray-700">
+                <p className="font-semibold">计算步骤：</p>
+                <ol className="list-decimal list-inside space-y-2 text-sm ml-2">
+                  <li>
+                    <strong>获取数据</strong>: 成交额Top100 ∩ 热度Top100 (取交集)
+                  </li>
+                  <li>
+                    <strong>Min-Max标准化</strong>:
+                    <div className="bg-white rounded p-2 mt-1 font-mono text-xs">
+                      标准化值 = (原始值 - 最小值) / (最大值 - 最小值)
+                    </div>
+                  </li>
+                  <li>
+                    <strong>加权计算</strong>:
+                    <div className="bg-white rounded p-2 mt-1 font-mono text-xs">
+                      综合评分 = 0.5 × 标准化成交额 + 0.5 × 标准化热度
+                    </div>
+                  </li>
+                  <li>
+                    <strong>初选</strong>: 按综合评分排序，取前30名
+                  </li>
+                  <li>
+                    <strong>终选</strong>: 计算动量分数，按动量排序，取前10名
+                  </li>
+                </ol>
+                <p className="text-sm mt-2 text-green-800">
+                  💡 <strong>解读</strong>: 综合评分兼顾"资金"和"人气"，筛选出市场关注度高的股票
+                </p>
+              </div>
+            </div>
+
+            {/* 筛选条件 */}
+            <div className="bg-amber-50 rounded-lg p-5">
+              <h3 className="text-lg font-bold text-amber-900 mb-3">🔍 筛选条件</h3>
+              <div className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start">
+                    <span className="text-red-600 mr-2">❌</span>
+                    <span><strong>排除ST股票</strong>: 自动过滤ST、*ST等特别处理股票</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-600 mr-2">❌</span>
+                    <span><strong>排除次新股</strong>: 过滤上市不足60天的股票</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-600 mr-2">✅</span>
+                    <span><strong>成交额要求</strong>: 必须在当日成交额Top100内</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-600 mr-2">✅</span>
+                    <span><strong>热度要求</strong>: 必须在当日热度Top100内</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-600 mr-2">✅</span>
+                    <span><strong>动量要求</strong>: K线数据充足（至少20天）</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* 排序规则 */}
+            <div className="bg-purple-50 rounded-lg p-5">
+              <h3 className="text-lg font-bold text-purple-900 mb-3">🏆 排序规则</h3>
+              <div className="space-y-2 text-gray-700">
+                <p className="text-sm mb-3">最终结果按<strong>动量分数</strong>从高到低排序：</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-2xl">🥇</span>
+                      <strong className="text-yellow-800">金牌股票</strong>
+                    </div>
+                    <p className="text-xs text-gray-600">排名: 第1-3名</p>
+                  </div>
+                  <div className="bg-gray-100 border-2 border-gray-400 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-2xl">🥈</span>
+                      <strong className="text-gray-800">银牌股票</strong>
+                    </div>
+                    <p className="text-xs text-gray-600">排名: 第4-10名</p>
+                  </div>
+                </div>
+                <p className="text-sm mt-3 text-purple-800">
+                  💡 <strong>建议</strong>: 重点关注前3名金牌股票，它们具有最强的短期动量
+                </p>
+              </div>
+            </div>
+
+            {/* 免责声明 */}
+            <div className="bg-red-50 border-l-4 border-red-500 rounded p-4">
+              <p className="text-sm text-red-800">
+                <strong>⚠️ 免责声明：</strong>
+                本工具仅供学习和复盘参考使用，不构成任何投资建议。筛选结果基于历史数据计算，
+                技术分析有滞后性，需结合基本面和消息面综合判断。市场有风险，投资需谨慎。
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* API 状态 */}
