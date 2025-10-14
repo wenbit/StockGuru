@@ -10,7 +10,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/  # 注释掉，避免忽略 frontend/lib
 lib64/
 parts/
 sdist/
