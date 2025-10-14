@@ -36,6 +36,7 @@ ipykernel==7.0.0
 ipython==9.6.0
 ipython_pygments_lexers==1.1.1
 jedi==0.19.2
+jinja2==3.1.4
 joblib==1.5.2
 jsonpath==0.82.2
 jupyter_client==8.6.3
