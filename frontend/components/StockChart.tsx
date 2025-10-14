@@ -35,8 +35,9 @@ export default function StockChart({ stockCode, stockName, days = 60 }: StockCha
     setError('');
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await fetch(
-        `http://localhost:8000/api/v1/stock/${stockCode}/kline?days=${days}`
+        `${apiUrl}/api/v1/stock/${stockCode}/kline?days=${days}`
       );
 
       if (!response.ok) {
