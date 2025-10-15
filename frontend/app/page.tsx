@@ -272,6 +272,14 @@ export default function Home() {
                   {taskResult.status === 'running' && '⏳ 正在筛选...'}
                   {taskResult.status === 'pending' && '⏳ 等待处理...'}
                 </p>
+                {/* 日期提示 */}
+                {taskResult.actual_date && taskResult.query_date && taskResult.actual_date !== taskResult.query_date && (
+                  <div className="mb-2 p-2 bg-amber-100 border border-amber-300 rounded text-sm">
+                    <p className="text-amber-800">
+                      📅 <strong>注意：</strong>查询日期 {taskResult.query_date} 为非交易日，显示的是 <strong>{taskResult.actual_date}</strong> 的数据
+                    </p>
+                  </div>
+                )}
                 {taskResult.result_count !== undefined && (
                   <p className="text-sm text-gray-600">
                     找到 {taskResult.result_count} 只股票

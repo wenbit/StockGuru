@@ -26,6 +26,8 @@ export interface TaskResult {
   error_message?: string;
   created_at?: string;
   completed_at?: string;
+  actual_date?: string;     // 实际数据日期
+  query_date?: string;      // 查询日期
 }
 
 export interface StockResult {

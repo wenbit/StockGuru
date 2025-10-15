@@ -156,6 +156,22 @@ class ScreeningService:
                 logger.warning(error_msg)
                 raise ValueError(error_msg)
             
+            # 检测实际数据日期（从字段名中提取）
+            actual_date = None
+            for col in volume_df.columns:
+                if '成交额[' in str(col) or '成交量[' in str(col):
+                    import re
+                    match = re.search(r'\[(\d{8})\]', str(col))
+                    if match:
+                        date_str = match.group(1)
+                        actual_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                        break
+            
+            if actual_date and actual_date != date:
+                logger.info(f"查询日期 {date} 返回的是 {actual_date} 的数据（可能是非交易日）")
+                _tasks_store[task_id]["actual_date"] = actual_date
+                _tasks_store[task_id]["query_date"] = date
+            
             _tasks_store[task_id]["progress"] = 30
             
             if supabase:
@@ -413,7 +429,9 @@ class ScreeningService:
                 "results": results,
                 "error_message": task.get("error_message"),
                 "created_at": task["created_at"],
-                "completed_at": task.get("completed_at")
+                "completed_at": task.get("completed_at"),
+                "actual_date": task.get("actual_date"),  # 实际数据日期
+                "query_date": task.get("query_date")     # 查询日期
             }
         
         # 如果内存没有，尝试从 Supabase 获取
