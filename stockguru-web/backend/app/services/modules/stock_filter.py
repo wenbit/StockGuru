@@ -127,9 +127,16 @@ class StockFilter:
         # 从 volume_common 中选择字段
         volume_cols = ['code', 'name', volume_col, 'volume_normalized']
         # 添加价格和涨跌幅字段（如果存在）
-        for col in ['最新价', '最新涨跌幅', '成交量[20251014]']:
+        for col in ['最新价', '最新涨跌幅']:
             if col in volume_common.columns:
                 volume_cols.append(col)
+        
+        # 动态添加成交量字段（可能包含日期）
+        for col in volume_common.columns:
+            if col == '成交量' or '成交量[' in str(col):
+                if col not in volume_cols:
+                    volume_cols.append(col)
+                break
         
         # 从 hot_common 中选择字段
         hot_cols = ['code', hot_col, 'hot_normalized']
@@ -199,12 +206,12 @@ class StockFilter:
     
     def _find_volume_column(self, df: pd.DataFrame) -> str:
         """查找成交额列名"""
-        possible_names = ['volume_amount', '成交额', 'amount', '成交额[20241014]']
+        possible_names = ['volume_amount', '成交额', 'amount']
         for name in possible_names:
             if name in df.columns:
                 return name
         
-        # 尝试模糊匹配
+        # 尝试模糊匹配（包含日期的字段）
         for col in df.columns:
             if '成交额' in str(col) or 'amount' in str(col).lower():
                 return col
