@@ -270,13 +270,25 @@ class ScreeningService:
                 
                 # 动态查找成交量字段（可能包含日期）
                 volume = 0
+                volume_field = None
                 for key in stock.keys():
                     if key == "成交量" or key == "volume":
-                        volume = stock.get(key, 0)
+                        volume = stock.get(key, 0) or 0
+                        volume_field = key
                         break
                     elif "成交量[" in str(key):  # 匹配 成交量[YYYYMMDD] 格式
-                        volume = stock.get(key, 0)
+                        volume = stock.get(key, 0) or 0
+                        volume_field = key
                         break
+                
+                # 如果还是0，尝试其他可能的字段
+                if volume == 0:
+                    for key in stock.keys():
+                        if "vol" in str(key).lower() and "volume" not in str(key).lower():
+                            volume = stock.get(key, 0) or 0
+                            volume_field = key
+                            if volume != 0:
+                                break
                 
                 result_data = {
                     "task_id": task_id,
@@ -296,7 +308,8 @@ class ScreeningService:
                 # 打印第一条数据用于调试
                 if idx == 1:
                     logger.info(f"示例数据字段: {list(stock.keys())}")
-                    logger.info(f"收盘价: {close_price}, 涨跌幅: {change_pct}, 成交量: {volume}")
+                    logger.info(f"成交量字段: {volume_field}, 值: {volume}")
+                    logger.info(f"收盘价: {close_price}, 涨跌幅: {change_pct}")
             
             # 保存到内存
             _results_store[task_id] = results
