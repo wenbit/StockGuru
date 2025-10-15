@@ -152,9 +152,16 @@ class ScreeningService:
             volume_df = data_fetcher.get_volume_top_stocks(date, volume_top_n)
             
             if volume_df.empty:
-                error_msg = f"未获取到 {date} 的成交额数据，可能原因：该日期为非交易日、未来日期或数据源暂无数据"
-                logger.warning(error_msg)
-                raise ValueError(error_msg)
+                no_data_msg = f"{date} 暂无成交额数据（可能为非交易日、未来日期或数据源暂无数据）"
+                logger.warning(no_data_msg)
+                _tasks_store[task_id]["status"] = "completed"
+                _tasks_store[task_id]["progress"] = 100
+                _tasks_store[task_id]["result_count"] = 0
+                _tasks_store[task_id]["completed_at"] = datetime.now().isoformat()
+                _tasks_store[task_id]["no_data_reason"] = no_data_msg
+                _results_store[task_id] = []
+                logger.info(f"筛选完成: 0 只股票（无数据）")
+                return
             
             # 检测实际数据日期（从字段名中提取）
             actual_date = None
@@ -184,9 +191,16 @@ class ScreeningService:
             hot_df = data_fetcher.get_hot_top_stocks(date, hot_top_n)
             
             if hot_df.empty:
-                error_msg = f"未获取到 {date} 的热度数据，可能原因：该日期为非交易日、未来日期或数据源暂无数据"
-                logger.warning(error_msg)
-                raise ValueError(error_msg)
+                no_data_msg = f"{date} 暂无热度数据（可能为非交易日、未来日期或数据源暂无数据）"
+                logger.warning(no_data_msg)
+                _tasks_store[task_id]["status"] = "completed"
+                _tasks_store[task_id]["progress"] = 100
+                _tasks_store[task_id]["result_count"] = 0
+                _tasks_store[task_id]["completed_at"] = datetime.now().isoformat()
+                _tasks_store[task_id]["no_data_reason"] = no_data_msg
+                _results_store[task_id] = []
+                logger.info(f"筛选完成: 0 只股票（无数据）")
+                return
             
             _tasks_store[task_id]["progress"] = 50
             
@@ -200,9 +214,16 @@ class ScreeningService:
             filtered_df = stock_filter.calculate_comprehensive_score(volume_df, hot_df)
             
             if filtered_df.empty:
-                error_msg = f"未找到符合条件的股票，可能原因：成交额和热度榜单无交集"
-                logger.warning(error_msg)
-                raise ValueError(error_msg)
+                no_data_msg = f"{date} 暂无符合条件的股票（成交额和热度榜单无交集）"
+                logger.warning(no_data_msg)
+                _tasks_store[task_id]["status"] = "completed"
+                _tasks_store[task_id]["progress"] = 100
+                _tasks_store[task_id]["result_count"] = 0
+                _tasks_store[task_id]["completed_at"] = datetime.now().isoformat()
+                _tasks_store[task_id]["no_data_reason"] = no_data_msg
+                _results_store[task_id] = []
+                logger.info(f"筛选完成: 0 只股票（无交集）")
+                return
             _tasks_store[task_id]["progress"] = 70
             
             if supabase:
@@ -430,8 +451,9 @@ class ScreeningService:
                 "error_message": task.get("error_message"),
                 "created_at": task["created_at"],
                 "completed_at": task.get("completed_at"),
-                "actual_date": task.get("actual_date"),  # 实际数据日期
-                "query_date": task.get("query_date")     # 查询日期
+                "actual_date": task.get("actual_date"),      # 实际数据日期
+                "query_date": task.get("query_date"),        # 查询日期
+                "no_data_reason": task.get("no_data_reason") # 无数据原因
             }
         
         # 如果内存没有，尝试从 Supabase 获取

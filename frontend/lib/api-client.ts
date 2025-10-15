@@ -28,6 +28,7 @@ export interface TaskResult {
   completed_at?: string;
   actual_date?: string;     // 实际数据日期
   query_date?: string;      // 查询日期
+  no_data_reason?: string;  // 无数据原因
 }
 
 export interface StockResult {

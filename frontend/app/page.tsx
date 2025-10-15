@@ -280,11 +280,21 @@ export default function Home() {
                     </p>
                   </div>
                 )}
-                {taskResult.result_count !== undefined && (
+                {/* 无数据提示 */}
+                {taskResult.no_data_reason && taskResult.result_count === 0 && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-blue-800 text-sm">
+                      ℹ️ {taskResult.no_data_reason}
+                    </p>
+                  </div>
+                )}
+                {/* 正常结果计数 */}
+                {taskResult.result_count !== undefined && !taskResult.no_data_reason && (
                   <p className="text-sm text-gray-600">
                     找到 {taskResult.result_count} 只股票
                   </p>
                 )}
+                {/* 错误信息（真正的错误） */}
                 {taskResult.error_message && (
                   <p className="text-sm text-red-600 mt-2">
                     错误: {taskResult.error_message}
