@@ -150,6 +150,12 @@ class ScreeningService:
             # 1. 获取成交额数据
             logger.info(f"获取成交额数据: {date}, top_n={volume_top_n}")
             volume_df = data_fetcher.get_volume_top_stocks(date, volume_top_n)
+            
+            if volume_df.empty:
+                error_msg = f"未获取到 {date} 的成交额数据，可能原因：该日期为非交易日、未来日期或数据源暂无数据"
+                logger.warning(error_msg)
+                raise ValueError(error_msg)
+            
             _tasks_store[task_id]["progress"] = 30
             
             if supabase:
@@ -160,6 +166,12 @@ class ScreeningService:
             # 2. 获取热度数据
             logger.info(f"获取热度数据: {date}, top_n={hot_top_n}")
             hot_df = data_fetcher.get_hot_top_stocks(date, hot_top_n)
+            
+            if hot_df.empty:
+                error_msg = f"未获取到 {date} 的热度数据，可能原因：该日期为非交易日、未来日期或数据源暂无数据"
+                logger.warning(error_msg)
+                raise ValueError(error_msg)
+            
             _tasks_store[task_id]["progress"] = 50
             
             if supabase:
@@ -170,6 +182,11 @@ class ScreeningService:
             # 3. 筛选股票
             logger.info("筛选股票...")
             filtered_df = stock_filter.calculate_comprehensive_score(volume_df, hot_df)
+            
+            if filtered_df.empty:
+                error_msg = f"未找到符合条件的股票，可能原因：成交额和热度榜单无交集"
+                logger.warning(error_msg)
+                raise ValueError(error_msg)
             _tasks_store[task_id]["progress"] = 70
             
             if supabase:

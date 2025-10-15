@@ -14,9 +14,14 @@ export default function Home() {
   const [selectedStock, setSelectedStock] = useState<StockResult | null>(null);
   const [clearingCache, setClearingCache] = useState(false);
   const [cacheMessage, setCacheMessage] = useState('');
+  const [maxDate, setMaxDate] = useState('');
 
   // 在客户端设置默认日期，避免 hydration 错误
   useEffect(() => {
+    // 设置最大日期为今天
+    const today = new Date();
+    setMaxDate(today.toISOString().split('T')[0]);
+    
     // 从 localStorage 恢复日期，如果没有则使用前一天
     const savedDate = localStorage.getItem('lastScreeningDate');
     const yesterday = new Date();
@@ -166,10 +171,14 @@ export default function Home() {
               <input
                 type="date"
                 value={date}
+                max={maxDate}
                 onChange={(e) => handleDateChange(e.target.value)}
                 disabled={loading}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                💡 只能选择今天及之前的日期
+              </p>
             </div>
 
             <button
@@ -218,8 +227,19 @@ export default function Home() {
 
           {/* 错误提示 */}
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800">❌ {error}</p>
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start">
+                <span className="text-2xl mr-3">⚠️</span>
+                <div className="flex-1">
+                  <p className="text-amber-900 font-medium mb-1">筛选提示</p>
+                  <p className="text-amber-800 text-sm">{error}</p>
+                  {error.includes('非交易日') || error.includes('未来日期') ? (
+                    <p className="text-amber-700 text-xs mt-2">
+                      💡 建议：选择最近的交易日（工作日）进行筛选
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             </div>
           )}
 
