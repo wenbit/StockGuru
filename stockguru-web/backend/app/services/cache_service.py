@@ -139,6 +139,61 @@ class CacheService:
         except Exception as e:
             logger.error(f"清理缓存失败: {e}")
             return 0
+    
+    def clear_all_cache(self):
+        """
+        清除所有缓存
+        
+        Returns:
+            清除的文件数量
+        """
+        try:
+            count = 0
+            for cache_file in self.cache_dir.glob("*.json"):
+                try:
+                    cache_file.unlink()
+                    count += 1
+                except:
+                    pass
+            
+            logger.info(f"清除了所有缓存: {count} 个文件")
+            return count
+            
+        except Exception as e:
+            logger.error(f"清除缓存失败: {e}")
+            return 0
+    
+    def clear_cache_by_date(self, date: str):
+        """
+        清除指定日期的缓存
+        
+        Args:
+            date: 日期字符串 (YYYY-MM-DD)
+            
+        Returns:
+            清除的文件数量
+        """
+        try:
+            count = 0
+            for cache_file in self.cache_dir.glob("*.json"):
+                try:
+                    with open(cache_file, 'r', encoding='utf-8') as f:
+                        cache_data = json.load(f)
+                    
+                    # 检查参数中是否包含指定日期
+                    if cache_data.get('params', {}).get('date') == date:
+                        cache_file.unlink()
+                        count += 1
+                        logger.info(f"清除了日期 {date} 的缓存")
+                except:
+                    pass
+            
+            logger.info(f"清除了 {count} 个日期为 {date} 的缓存文件")
+            return count
+            
+        except Exception as e:
+            logger.error(f"清除日期缓存失败: {e}")
+            return 0
 
 
 # 全局缓存实例

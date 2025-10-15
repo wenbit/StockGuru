@@ -291,3 +291,55 @@ async def export_report_excel(task_id: str):
     except Exception as e:
         logger.error(f"导出Excel报告失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"导出Excel报告失败: {str(e)}")
+
+
+@router.delete("/cache")
+async def clear_all_cache():
+    """
+    清除所有缓存
+    
+    Returns:
+        清除的缓存数量
+    """
+    try:
+        from app.services.cache_service import get_cache_service
+        cache_service = get_cache_service()
+        count = cache_service.clear_all_cache()
+        
+        logger.info(f"清除了所有缓存: {count} 个文件")
+        return {
+            "message": "缓存已清除",
+            "count": count
+        }
+        
+    except Exception as e:
+        logger.error(f"清除缓存失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"清除缓存失败: {str(e)}")
+
+
+@router.delete("/cache/{date}")
+async def clear_cache_by_date(date: str):
+    """
+    清除指定日期的缓存
+    
+    Args:
+        date: 日期 (格式: YYYY-MM-DD)
+        
+    Returns:
+        清除的缓存数量
+    """
+    try:
+        from app.services.cache_service import get_cache_service
+        cache_service = get_cache_service()
+        count = cache_service.clear_cache_by_date(date)
+        
+        logger.info(f"清除了日期 {date} 的缓存: {count} 个文件")
+        return {
+            "message": f"日期 {date} 的缓存已清除",
+            "date": date,
+            "count": count
+        }
+        
+    except Exception as e:
+        logger.error(f"清除日期缓存失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"清除日期缓存失败: {str(e)}")
