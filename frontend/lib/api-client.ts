@@ -84,4 +84,34 @@ export const apiClient = {
     
     return response.json();
   },
+
+  /**
+   * 清除所有缓存
+   */
+  async clearAllCache(): Promise<{ message: string; count: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/cache`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  /**
+   * 清除指定日期的缓存
+   */
+  async clearCacheByDate(date: string): Promise<{ message: string; date: string; count: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/cache/${date}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
 };

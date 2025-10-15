@@ -12,6 +12,8 @@ export default function Home() {
   const [error, setError] = useState<string>('');
   const [date, setDate] = useState('');
   const [selectedStock, setSelectedStock] = useState<StockResult | null>(null);
+  const [clearingCache, setClearingCache] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState('');
 
   // 在客户端设置默认日期，避免 hydration 错误
   useEffect(() => {
@@ -96,6 +98,47 @@ export default function Home() {
     localStorage.setItem('lastScreeningDate', newDate);
   }
 
+  // 清空所有缓存
+  async function handleClearAllCache() {
+    setClearingCache(true);
+    setCacheMessage('');
+    
+    try {
+      const result = await apiClient.clearAllCache();
+      setCacheMessage(`✅ ${result.message}，共清除 ${result.count} 个缓存文件`);
+      
+      // 3秒后清除消息
+      setTimeout(() => setCacheMessage(''), 3000);
+    } catch (err: any) {
+      setCacheMessage(`❌ 清除缓存失败: ${err.message}`);
+    } finally {
+      setClearingCache(false);
+    }
+  }
+
+  // 清空当前日期的缓存
+  async function handleClearDateCache() {
+    if (!date) {
+      setCacheMessage('❌ 请先选择日期');
+      return;
+    }
+    
+    setClearingCache(true);
+    setCacheMessage('');
+    
+    try {
+      const result = await apiClient.clearCacheByDate(date);
+      setCacheMessage(`✅ ${result.message}，共清除 ${result.count} 个缓存文件`);
+      
+      // 3秒后清除消息
+      setTimeout(() => setCacheMessage(''), 3000);
+    } catch (err: any) {
+      setCacheMessage(`❌ 清除缓存失败: ${err.message}`);
+    } finally {
+      setClearingCache(false);
+    }
+  }
+
   return (
     <main className="min-h-screen p-8 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-6xl mx-auto">
@@ -146,7 +189,32 @@ export default function Home() {
                 '🚀 一键筛选'
               )}
             </button>
+
+            {/* 缓存管理按钮 */}
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={handleClearDateCache}
+                disabled={clearingCache || !date}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
+              >
+                {clearingCache ? '清除中...' : '🗑️ 清除当前日期缓存'}
+              </button>
+              <button
+                onClick={handleClearAllCache}
+                disabled={clearingCache}
+                className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
+              >
+                {clearingCache ? '清除中...' : '🗑️ 清除所有缓存'}
+              </button>
+            </div>
           </div>
+
+          {/* 缓存操作消息 */}
+          {cacheMessage && (
+            <div className={`mt-4 p-3 rounded-lg ${cacheMessage.includes('✅') ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+              <p className={cacheMessage.includes('✅') ? 'text-green-800 text-sm' : 'text-red-800 text-sm'}>{cacheMessage}</p>
+            </div>
+          )}
 
           {/* 错误提示 */}
           {error && (
