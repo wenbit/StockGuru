@@ -94,6 +94,9 @@ async def query_daily_stock_data(request: QueryRequest):
         query = query.gte('trade_date', request.start_date.isoformat())
         query = query.lte('trade_date', request.end_date.isoformat())
         
+        # 过滤掉涨跌幅为 null 的记录（停牌或数据异常）
+        query = query.not_.is_('change_pct', 'null')
+        
         # 涨跌幅筛选
         if request.change_pct_min is not None:
             query = query.gte('change_pct', request.change_pct_min)
