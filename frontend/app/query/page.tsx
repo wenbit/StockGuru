@@ -47,8 +47,11 @@ export default function QueryPage() {
     sort_by: 'change_pct',
     sort_order: 'desc',
     page: 1,
-    page_size: 100  // 默认100条
+    page_size: 50  // 默认50条
   });
+  
+  // 总数限制（可选）
+  const [limitInput, setLimitInput] = useState<string>('');
 
   // 数据统计
   const [stats, setStats] = useState<any>(null);
@@ -86,13 +89,16 @@ export default function QueryPage() {
     setError('');
     
     try {
+      // 如果填写了总数限制，使用限制值；否则使用默认的 page_size
+      const actualPageSize = limitInput ? parseInt(limitInput) : params.page_size;
+      
       const queryData: any = {
         start_date: params.start_date,
         end_date: params.end_date,
         sort_by: params.sort_by,
         sort_order: params.sort_order,
         page: params.page,
-        page_size: params.page_size
+        page_size: actualPageSize
       };
 
       // 只有填写了涨跌幅才添加到查询条件
@@ -271,10 +277,13 @@ export default function QueryPage() {
               <input
                 type="number"
                 min="1"
-                max="1000"
-                placeholder="默认50"
-                value={params.page_size}
-                onChange={(e) => setParams(prev => ({ ...prev, page_size: parseInt(e.target.value) || 50, page: 1 }))}
+                max="10000"
+                placeholder="不填则返回所有结果"
+                value={limitInput}
+                onChange={(e) => {
+                  setLimitInput(e.target.value);
+                  setParams(prev => ({ ...prev, page: 1 }));
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -333,7 +342,6 @@ export default function QueryPage() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">涨跌幅</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">成交量</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">成交额</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">振幅</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -350,7 +358,6 @@ export default function QueryPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">{formatVolume(item.volume)}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">{formatVolume(item.amount)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">{formatNumber(item.amplitude)}%</td>
                     </tr>
                   ))}
                 </tbody>

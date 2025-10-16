@@ -105,16 +105,16 @@ async def query_daily_stock_data(request: QueryRequest):
         ascending = request.sort_order.lower() == 'asc'
         query = query.order(request.sort_by, desc=not ascending)
         
-        # 分页
-        offset = (request.page - 1) * request.page_size
-        query = query.range(offset, offset + request.page_size - 1)
+        # 限制总数：只返回前 page_size 条记录
+        # 注意：这里直接限制总数，而不是分页
+        query = query.limit(request.page_size)
         
         # 执行查询
         response = query.execute()
         
-        # 计算总页数
-        total = response.count if hasattr(response, 'count') else len(response.data)
-        total_pages = (total + request.page_size - 1) // request.page_size
+        # 返回的就是限制后的数据
+        total = len(response.data)
+        total_pages = 1  # 因为已经限制了总数，所以只有1页
         
         return QueryResponse(
             total=total,
