@@ -156,27 +156,22 @@ export default function QueryPage() {
     return vol.toString();
   }
 
-  // 导出 Excel
+  // 导出 Excel（与页面表格列顺序完全一致）
   function handleExportExcel() {
     if (data.length === 0) {
       alert('没有数据可导出');
       return;
     }
 
-    // 准备导出数据
+    // 准备导出数据（顺序与页面表格一致）
     const exportData = data.map(item => ({
       '日期': item.trade_date,
       '股票代码': item.stock_code,
       '股票名称': item.stock_name,
       '收盘价': item.close_price,
-      '涨跌幅(%)': item.change_pct,
-      '涨跌额': item.change_amount,
+      '涨跌幅': item.change_pct ? `${item.change_pct > 0 ? '+' : ''}${item.change_pct}%` : '-',
       '成交量': item.volume,
       '成交额': item.amount,
-      '换手率(%)': item.turnover_rate,
-      '开盘价': item.open_price,
-      '最高价': item.high_price,
-      '最低价': item.low_price,
     }));
 
     // 创建工作簿
@@ -190,14 +185,9 @@ export default function QueryPage() {
       { wch: 10 }, // 股票代码
       { wch: 12 }, // 股票名称
       { wch: 10 }, // 收盘价
-      { wch: 10 }, // 涨跌幅
-      { wch: 10 }, // 涨跌额
+      { wch: 12 }, // 涨跌幅
       { wch: 15 }, // 成交量
       { wch: 15 }, // 成交额
-      { wch: 10 }, // 换手率
-      { wch: 10 }, // 开盘价
-      { wch: 10 }, // 最高价
-      { wch: 10 }, // 最低价
     ];
     ws['!cols'] = colWidths;
 
