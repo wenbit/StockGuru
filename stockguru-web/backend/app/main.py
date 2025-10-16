@@ -3,7 +3,7 @@ StockGuru FastAPI 主程序
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import screening, stock
+from app.api import screening, stock, daily_stock
 from app.core.config import settings
 import logging
 
@@ -33,6 +33,39 @@ app.add_middleware(
 # 注册路由
 app.include_router(screening.router, prefix="/api/v1", tags=["Screening"])
 app.include_router(stock.router, prefix="/api/v1", tags=["Stock"])
+app.include_router(daily_stock.router, prefix="/api/v1/daily", tags=["Daily Stock Data"])
+
+# 启动事件
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时执行"""
+    logger = logging.getLogger(__name__)
+    logger.info("StockGuru API 启动中...")
+    
+    # 启动定时任务调度器
+    try:
+        from app.services.scheduler import get_scheduler
+        scheduler = get_scheduler()
+        scheduler.start()
+        logger.info("定时任务调度器已启动")
+    except Exception as e:
+        logger.error(f"启动定时任务调度器失败: {e}")
+
+# 关闭事件
+@app.on_event("shutdown")
+async def shutdown_event():
+    """应用关闭时执行"""
+    logger = logging.getLogger(__name__)
+    logger.info("StockGuru API 关闭中...")
+    
+    # 关闭定时任务调度器
+    try:
+        from app.services.scheduler import get_scheduler
+        scheduler = get_scheduler()
+        scheduler.shutdown()
+        logger.info("定时任务调度器已关闭")
+    except Exception as e:
+        logger.error(f"关闭定时任务调度器失败: {e}")
 
 @app.get("/")
 async def root():

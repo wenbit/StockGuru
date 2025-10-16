@@ -1,0 +1,160 @@
+{
+  "cached_at": "2025-10-15T08:45:35.971994",
+  "params": {
+    "date": "2025-10-06",
+    "volume_top_n": 100,
+    "hot_top_n": 100
+  },
+  "data": {
+    "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+    "task": {
+      "id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+      "date": "2025-10-06",
+      "status": "completed",
+      "params": {
+        "volume_top_n": 100,
+        "hot_top_n": 100
+      },
+      "progress": 100,
+      "created_at": "2025-10-15T08:45:27.694744",
+      "started_at": "2025-10-15T08:45:27.695756",
+      "completed_at": "2025-10-15T08:45:35.582454",
+      "result_count": 10,
+      "error_message": null,
+      "actual_date": "2025-09-30",
+      "query_date": "2025-10-06"
+    },
+    "results": [
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "000981",
+        "stock_name": "山子高科",
+        "momentum_score": 320.44921920118753,
+        "comprehensive_score": 0.6002293150454967,
+        "volume_rank": 1,
+        "hot_rank": 1,
+        "final_rank": 1,
+        "close_price": 4.74,
+        "change_pct": 9.976798144,
+        "volume": 1506758850.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "300604",
+        "stock_name": "长川科技",
+        "momentum_score": 269.13964352391247,
+        "comprehensive_score": 0.23742079426696322,
+        "volume_rank": 2,
+        "hot_rank": 2,
+        "final_rank": 2,
+        "close_price": 83.93,
+        "change_pct": -9.028831563,
+        "volume": 94031734.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "002709",
+        "stock_name": "天赐材料",
+        "momentum_score": 246.01084807501397,
+        "comprehensive_score": 0.2496356764061972,
+        "volume_rank": 3,
+        "hot_rank": 3,
+        "final_rank": 3,
+        "close_price": 34.56,
+        "change_pct": -7.320997586,
+        "volume": 205340692.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "002460",
+        "stock_name": "赣锋锂业",
+        "momentum_score": 244.07255803449553,
+        "comprehensive_score": 0.30211169674279537,
+        "volume_rank": 4,
+        "hot_rank": 4,
+        "final_rank": 4,
+        "close_price": 68.52,
+        "change_pct": -1.76344086,
+        "volume": 112408334.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "600895",
+        "stock_name": "张江高科",
+        "momentum_score": 166.3026271489636,
+        "comprehensive_score": 0.3164081003628295,
+        "volume_rank": 5,
+        "hot_rank": 5,
+        "final_rank": 5,
+        "close_price": 46.94,
+        "change_pct": -5.742971888,
+        "volume": 176117860.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "002050",
+        "stock_name": "三花智控",
+        "momentum_score": 164.61554427114527,
+        "comprehensive_score": 0.4576507833347633,
+        "volume_rank": 6,
+        "hot_rank": 6,
+        "final_rank": 6,
+        "close_price": 40.16,
+        "change_pct": -6.950880445,
+        "volume": 239081935.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "002475",
+        "stock_name": "立讯精密",
+        "momentum_score": 135.63839387155429,
+        "comprehensive_score": 0.4767103835497697,
+        "volume_rank": 7,
+        "hot_rank": 7,
+        "final_rank": 7,
+        "close_price": 55.01,
+        "change_pct": -4.744588745,
+        "volume": 229529053.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "603799",
+        "stock_name": "华友钴业",
+        "momentum_score": 126.1719020731134,
+        "comprehensive_score": 0.3267797846421556,
+        "volume_rank": 8,
+        "hot_rank": 8,
+        "final_rank": 8,
+        "close_price": 65.17,
+        "change_pct": -7.534052213,
+        "volume": 156843339.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "688981",
+        "stock_name": "中芯国际",
+        "momentum_score": 120.37122675713304,
+        "comprehensive_score": 0.5315389337875474,
+        "volume_rank": 9,
+        "hot_rank": 9,
+        "final_rank": 9,
+        "close_price": 127.2,
+        "change_pct": -6.792701693,
+        "volume": 98622900.0
+      },
+      {
+        "task_id": "f82f3585-e9c8-40f8-9141-1379e05aeb30",
+        "stock_code": "002156",
+        "stock_name": "通富微电",
+        "momentum_score": 106.88216459048573,
+        "comprehensive_score": 0.43440789126892937,
+        "volume_rank": 10,
+        "hot_rank": 10,
+        "final_rank": 10,
+        "close_price": 42.28,
+        "change_pct": -9.98509687,
+        "volume": 192032918.0
+      }
+    ]
+  }
+}

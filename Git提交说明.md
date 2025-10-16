@@ -206,4 +206,28 @@ git log --oneline -5
 
 ---
 
+解决方案
+
+  方法1: 使用GitHub CLI认证（推荐）
+
+  gh auth login --web
+  # 按照浏览器提示完成认证
+  gh auth status  # 确认认证成功
+  git push origin main
+
+  方法2: 使用个人访问令牌
+
+  1. 访问 https://github.com/settings/tokens
+  2. 创建新的个人访问令牌（选择repo权限）
+  3. 使用令牌推送：
+  git push https://<your-token>@github.com/wenbit/StockGuru.git main
+
+  方法3: 配置SSH密钥
+
+  # 生成SSH密钥
+  ssh-keygen -t ed25519 -C "your_email@example.com"
+  # 添加到GitHub账户后，修改远程URL
+  git remote set-url origin git@github.com:wenbit/StockGuru.git
+  git push origin main
+  
 *最后更新: 2025-10-15 04:27*
