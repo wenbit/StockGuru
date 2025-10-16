@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import * as XLSX from 'xlsx';
 
 interface DailyStockData {
   id: number;
@@ -153,6 +154,58 @@ export default function QueryPage() {
       return (vol / 10000).toFixed(2) + '万';
     }
     return vol.toString();
+  }
+
+  // 导出 Excel
+  function handleExportExcel() {
+    if (data.length === 0) {
+      alert('没有数据可导出');
+      return;
+    }
+
+    // 准备导出数据
+    const exportData = data.map(item => ({
+      '日期': item.trade_date,
+      '股票代码': item.stock_code,
+      '股票名称': item.stock_name,
+      '收盘价': item.close_price,
+      '涨跌幅(%)': item.change_pct,
+      '涨跌额': item.change_amount,
+      '成交量': item.volume,
+      '成交额': item.amount,
+      '换手率(%)': item.turnover_rate,
+      '开盘价': item.open_price,
+      '最高价': item.high_price,
+      '最低价': item.low_price,
+    }));
+
+    // 创建工作簿
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '股票数据');
+
+    // 设置列宽
+    const colWidths = [
+      { wch: 12 }, // 日期
+      { wch: 10 }, // 股票代码
+      { wch: 12 }, // 股票名称
+      { wch: 10 }, // 收盘价
+      { wch: 10 }, // 涨跌幅
+      { wch: 10 }, // 涨跌额
+      { wch: 15 }, // 成交量
+      { wch: 15 }, // 成交额
+      { wch: 10 }, // 换手率
+      { wch: 10 }, // 开盘价
+      { wch: 10 }, // 最高价
+      { wch: 10 }, // 最低价
+    ];
+    ws['!cols'] = colWidths;
+
+    // 生成文件名
+    const fileName = `股票数据_${params.start_date}_${params.end_date}_${new Date().getTime()}.xlsx`;
+
+    // 下载文件
+    XLSX.writeFile(wb, fileName);
   }
 
   return (
@@ -325,8 +378,19 @@ export default function QueryPage() {
               <h2 className="text-xl font-semibold text-gray-800">
                 查询结果 <span className="text-gray-500 text-base ml-2">共 {formatNumber(total)} 条</span>
               </h2>
-              <div className="text-sm text-gray-600">
-                第 {params.page} / {totalPages} 页
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleExportExcel}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  导出 Excel
+                </button>
+                <div className="text-sm text-gray-600">
+                  第 {params.page} / {totalPages} 页
+                </div>
               </div>
             </div>
 
