@@ -5,6 +5,10 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
     
+    # Neon Database
+    NEON_DATABASE_URL: str = ""
+    DATABASE_URL: str = ""
+    
     # 前端地址
     FRONTEND_URL: str = "http://localhost:3000"
     

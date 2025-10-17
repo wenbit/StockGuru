@@ -35,14 +35,16 @@ class DailyStockData(BaseModel):
 
 class QueryRequest(BaseModel):
     """查询请求"""
-    start_date: date = Field(..., description="开始日期")
-    end_date: date = Field(..., description="结束日期")
+    start_date: Optional[date] = Field(None, description="开始日期（不填则查询最新交易日）")
+    end_date: Optional[date] = Field(None, description="结束日期（不填则查询最新交易日）")
+    stock_code: Optional[str] = Field(None, description="股票代码（可选）")
     change_pct_min: Optional[float] = Field(None, description="最小涨跌幅（%）")
     change_pct_max: Optional[float] = Field(None, description="最大涨跌幅（%）")
+    volume_min: Optional[int] = Field(None, description="最小成交量")
     sort_by: str = Field("change_pct", description="排序字段")
     sort_order: str = Field("desc", description="排序方向: asc/desc")
     page: int = Field(1, ge=1, description="页码")
-    page_size: int = Field(50, ge=1, le=1000, description="每页数量")
+    page_size: int = Field(20, ge=1, le=1000, description="每页数量（默认20）")
 
 
 class QueryResponse(BaseModel):
@@ -74,18 +76,44 @@ async def query_daily_stock_data(request: QueryRequest):
     """
     查询每日股票数据
     
-    - **start_date**: 开始日期
-    - **end_date**: 结束日期
+    - **start_date**: 开始日期（不填则查询最新交易日）
+    - **end_date**: 结束日期（不填则查询最新交易日）
+    - **stock_code**: 股票代码（可选）
     - **change_pct_min**: 最小涨跌幅（%），可为负数
     - **change_pct_max**: 最大涨跌幅（%），可为负数
+    - **volume_min**: 最小成交量（可选）
     - **sort_by**: 排序字段（默认：change_pct）
     - **sort_order**: 排序方向（asc/desc，默认：desc）
     - **page**: 页码（从1开始）
-    - **page_size**: 每页数量（默认50，最大1000）
+    - **page_size**: 每页数量（默认20，最大1000）
     """
     try:
         from app.core.supabase import get_supabase_client
         supabase = get_supabase_client()
+        
+        # 如果没有指定日期，查询最新交易日
+        if not request.start_date or not request.end_date:
+            # 获取最新交易日
+            latest_response = supabase.table('daily_stock_data')\
+                .select('trade_date')\
+                .order('trade_date', desc=True)\
+                .limit(1)\
+                .execute()
+            
+            if not latest_response.data:
+                return QueryResponse(
+                    total=0,
+                    page=request.page,
+                    page_size=request.page_size,
+                    total_pages=0,
+                    data=[]
+                )
+            
+            latest_date = latest_response.data[0]['trade_date']
+            if not request.start_date:
+                request.start_date = latest_date
+            if not request.end_date:
+                request.end_date = latest_date
         
         # 构建查询
         query = supabase.table('daily_stock_data').select('*', count='exact')
@@ -97,6 +125,10 @@ async def query_daily_stock_data(request: QueryRequest):
         # 过滤掉涨跌幅为 null 的记录（停牌或数据异常）
         query = query.not_.is_('change_pct', 'null')
         
+        # 股票代码筛选
+        if request.stock_code:
+            query = query.eq('stock_code', request.stock_code)
+        
         # 涨跌幅筛选
         if request.change_pct_min is not None:
             query = query.gte('change_pct', request.change_pct_min)
@@ -104,20 +136,24 @@ async def query_daily_stock_data(request: QueryRequest):
         if request.change_pct_max is not None:
             query = query.lte('change_pct', request.change_pct_max)
         
+        # 成交量筛选
+        if request.volume_min is not None:
+            query = query.gte('volume', request.volume_min)
+        
         # 排序
         ascending = request.sort_order.lower() == 'asc'
         query = query.order(request.sort_by, desc=not ascending)
         
-        # 限制总数：只返回前 page_size 条记录
-        # 注意：这里直接限制总数，而不是分页
-        query = query.limit(request.page_size)
+        # 分页：计算 offset
+        offset = (request.page - 1) * request.page_size
+        query = query.range(offset, offset + request.page_size - 1)
         
         # 执行查询
         response = query.execute()
         
-        # 返回的就是限制后的数据
-        total = len(response.data)
-        total_pages = 1  # 因为已经限制了总数，所以只有1页
+        # 计算总页数
+        total = response.count if hasattr(response, 'count') else len(response.data)
+        total_pages = (total + request.page_size - 1) // request.page_size if total > 0 else 0
         
         return QueryResponse(
             total=total,
@@ -175,36 +211,25 @@ async def get_stock_history(
 @router.post("/sync", response_model=SyncResponse)
 async def trigger_sync(request: SyncRequest):
     """
-    手动触发数据同步
+    手动触发数据同步（使用 Neon 高性能服务）
     
     - **sync_date**: 同步指定日期的数据（可选，不填则同步今天）
     - **days**: 同步最近N天的数据（用于初始化，与sync_date互斥）
     """
     try:
-        from app.services.daily_data_sync_service_v2 import get_sync_service_v2
-        sync_service = get_sync_service_v2()
+        from app.services.daily_data_sync_service_neon import DailyDataSyncServiceNeon
+        sync_service = DailyDataSyncServiceNeon()
         
-        if request.days:
-            # 同步历史数据
-            logger.info(f"开始同步最近 {request.days} 天的数据...")
-            result = await sync_service.sync_historical_data(request.days)
-            
-            return SyncResponse(
-                status="success",
-                message=f"历史数据同步完成，成功 {result['success_days']}/{result['total_days']} 天",
-                data=result
-            )
-        else:
-            # 同步单日数据
-            sync_date = request.sync_date or date.today()
-            logger.info(f"开始同步 {sync_date} 的数据...")
-            result = await sync_service.sync_date_data(sync_date)
-            
-            return SyncResponse(
-                status=result['status'],
-                message=f"数据同步完成: {result.get('message', '')}",
-                data=result
-            )
+        # 同步单日数据（Neon 服务暂不支持批量同步）
+        sync_date = request.sync_date or date.today()
+        logger.info(f"开始同步 {sync_date} 的数据...")
+        result = sync_service.sync_daily_data(sync_date)
+        
+        return SyncResponse(
+            status=result['status'],
+            message=f"数据同步完成: {result.get('message', '')}",
+            data=result
+        )
         
     except Exception as e:
         logger.error(f"同步失败: {e}", exc_info=True)
