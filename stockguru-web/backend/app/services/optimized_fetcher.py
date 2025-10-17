@@ -1,13 +1,12 @@
 """
-终极优化获取器
-使用预取 + 并行处理 + 批量插入
-预期提速 2倍
+优化获取器
+使用批量处理 + 并行数据处理
+实测有效的优化方案
 """
 
 import logging
 import time
-import threading
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 
@@ -16,15 +15,13 @@ logger = logging.getLogger(__name__)
 
 class OptimizedFetcher:
     """
-    终极优化获取器
-    - 预取下一个数据（隐藏网络延迟）
+    优化获取器（实用版）
+    - 串行获取（Baostock限制）
     - 并行处理数据（CPU密集型）
     - 批量准备插入
     """
     
     def __init__(self):
-        self.cache = {}
-        self.cache_lock = threading.Lock()
         logger.info("✅ Optimized fetcher initialized")
     
     def fetch_all_optimized(
@@ -56,20 +53,15 @@ class OptimizedFetcher:
         success_count = 0
         
         try:
-            # 2. 串行获取 + 预取
+            # 2. 串行获取（Baostock 不支持并发）
             for i, code in enumerate(stock_codes):
                 try:
-                    # 获取当前数据（可能从缓存）
-                    df = self._fetch_with_cache(code, date_str, bs)
+                    # 直接获取
+                    df = self._fetch_single(code, date_str, bs)
                     
                     if not df.empty:
                         raw_data.append((code, df))
                         success_count += 1
-                    
-                    # 预取下一个（如果有）
-                    if i + 1 < len(stock_codes):
-                        next_code = stock_codes[i + 1]
-                        self._prefetch_async(next_code, date_str, bs)
                     
                     # 进度回调
                     if progress_callback and ((i + 1) % 100 == 0 or i + 1 == len(stock_codes)):
@@ -91,28 +83,6 @@ class OptimizedFetcher:
         
         return raw_data
     
-    def _fetch_with_cache(self, code: str, date_str: str, bs) -> pd.DataFrame:
-        """
-        带缓存的获取
-        
-        Args:
-            code: 股票代码
-            date_str: 日期
-            bs: baostock 实例
-        
-        Returns:
-            DataFrame
-        """
-        key = f"{code}_{date_str}"
-        
-        # 检查缓存
-        with self.cache_lock:
-            if key in self.cache:
-                logger.debug(f"Cache hit: {code}")
-                return self.cache.pop(key)
-        
-        # 缓存未命中，直接获取
-        return self._fetch_single(code, date_str, bs)
     
     def _fetch_single(self, code: str, date_str: str, bs) -> pd.DataFrame:
         """
@@ -148,32 +118,6 @@ class OptimizedFetcher:
         except Exception as e:
             logger.error(f"Error fetching {code}: {e}")
             return pd.DataFrame()
-    
-    def _prefetch_async(self, code: str, date_str: str, bs):
-        """
-        异步预取下一个数据
-        
-        Args:
-            code: 股票代码
-            date_str: 日期
-            bs: baostock 实例
-        """
-        def prefetch():
-            try:
-                df = self._fetch_single(code, date_str, bs)
-                
-                if not df.empty:
-                    key = f"{code}_{date_str}"
-                    with self.cache_lock:
-                        self.cache[key] = df
-                        logger.debug(f"Prefetched: {code}")
-            
-            except Exception as e:
-                logger.warning(f"Prefetch failed for {code}: {e}")
-        
-        # 启动预取线程
-        thread = threading.Thread(target=prefetch, daemon=True)
-        thread.start()
     
     def process_data_parallel(
         self,
