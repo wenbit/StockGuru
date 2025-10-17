@@ -42,6 +42,14 @@ async def startup_event():
     logger = logging.getLogger(__name__)
     logger.info("StockGuru API 启动中...")
     
+    # 初始化数据库连接池
+    try:
+        from app.core.database import init_db_pool
+        init_db_pool()
+        logger.info("数据库连接池已初始化")
+    except Exception as e:
+        logger.error(f"初始化数据库连接池失败: {e}")
+    
     # 启动定时任务调度器
     try:
         from app.services.scheduler import get_scheduler
@@ -57,6 +65,14 @@ async def shutdown_event():
     """应用关闭时执行"""
     logger = logging.getLogger(__name__)
     logger.info("StockGuru API 关闭中...")
+    
+    # 关闭数据库连接池
+    try:
+        from app.core.database import close_db_pool
+        close_db_pool()
+        logger.info("数据库连接池已关闭")
+    except Exception as e:
+        logger.error(f"关闭数据库连接池失败: {e}")
     
     # 关闭定时任务调度器
     try:

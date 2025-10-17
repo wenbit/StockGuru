@@ -257,10 +257,12 @@ def run_async(coro):
 # 使用示例
 async def example_usage():
     """使用示例"""
+    from datetime import date, timedelta
+    
     fetcher = AsyncDataFetcher(max_concurrent=10)
     
     stock_codes = ['000001', '000002', '600000', '600001']
-    date_str = '2025-10-10'
+    date_str = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')  # 昨天
     
     # 异步获取数据
     results = await fetcher.fetch_multiple_stocks(stock_codes, date_str)

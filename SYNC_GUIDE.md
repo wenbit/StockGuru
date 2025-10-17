@@ -202,6 +202,35 @@ curl -X POST "https://your-app.onrender.com/api/v1/daily/sync-v3" \
 
 ---
 
+## 🧪 快速测试
+
+### 运行同步测试
+```bash
+# 进入项目目录
+cd /Users/van/dev/source/claudecode_src/StockGuru
+
+# 测试 15 只股票（推荐）
+./scripts/run_sync_test.sh 15 2025-10-16
+
+# 测试 5 只股票（快速验证）
+./scripts/run_sync_test.sh 5 2025-10-16
+```
+
+### 预期结果
+```
+✅ 环境变量已加载
+✅ 数据库连接成功 (DATABASE_URL)
+✅ baostock 登录成功
+✅ 获取到 15 只股票
+✅ 成功: 15, 失败: 0
+✅ 成功入库: 10-15 条
+
+⏱️  总耗时: 3-5 秒
+🚀 速度: 250-300 股/分钟
+```
+
+---
+
 ## 🔧 故障排查
 
 ### 问题 1: 连接失败
@@ -210,9 +239,10 @@ ERROR: 无法获取数据库连接
 ```
 
 **解决方案**:
-1. 检查环境变量是否正确设置
-2. 确认使用 Pooler 端口 (6543)
-3. 检查 Supabase 项目是否暂停（Free Tier 7天无活动会暂停）
+1. 检查 `.env` 文件中的 `DATABASE_URL` 是否正确
+2. 确认数据库服务是否正常运行
+3. 对于 Supabase: 检查项目是否暂停（Free Tier 7天无活动会暂停）
+4. 对于 Neon: 检查连接字符串格式是否正确
 
 ### 问题 2: 权限错误
 ```
