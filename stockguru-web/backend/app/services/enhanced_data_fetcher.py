@@ -213,38 +213,40 @@ class EnhancedAKShareFetcher:
 class RobustMultiSourceFetcher:
     """
     健壮的多数据源获取器
-    专门优化网络问题
+    优化：Baostock 优先（最稳定），AData/AKShare 快速失败
     """
     
     def __init__(self):
         self.sources = []
         
-        # 初始化增强版数据源
-        adata_fetcher = EnhancedADataFetcher()
-        if adata_fetcher.is_available():
-            self.sources.append(('adata', adata_fetcher))
-            logger.info("✅ Enhanced AData source loaded")
-        
-        akshare_fetcher = EnhancedAKShareFetcher()
-        if akshare_fetcher.is_available():
-            self.sources.append(('akshare', akshare_fetcher))
-            logger.info("✅ Enhanced AKShare source loaded")
-        
-        # Baostock 作为兜底
+        # 优先使用 Baostock（最稳定，速度快）
         try:
             import baostock as bs
             self.bs = bs
             self.bs_logged_in = False
             self.sources.append(('baostock', None))
-            logger.info("✅ Baostock source loaded")
+            logger.info("✅ Baostock source loaded (Priority 1)")
         except ImportError:
             logger.warning("Baostock not available")
         
+        # AData 作为备选（降低优先级，快速失败）
+        adata_fetcher = EnhancedADataFetcher()
+        if adata_fetcher.is_available():
+            self.sources.append(('adata', adata_fetcher))
+            logger.info("✅ Enhanced AData source loaded (Priority 2)")
+        
+        # AKShare 作为最后选择（降低优先级，快速失败）
+        akshare_fetcher = EnhancedAKShareFetcher()
+        if akshare_fetcher.is_available():
+            self.sources.append(('akshare', akshare_fetcher))
+            logger.info("✅ Enhanced AKShare source loaded (Priority 3)")
+        
         logger.info(f"Initialized with {len(self.sources)} sources: {[s[0] for s in self.sources]}")
+        logger.info("Priority: Baostock (fast) → AData (backup) → AKShare (last)")
     
     def fetch_daily_data(self, stock_code: str, date_str: str) -> pd.DataFrame:
         """
-        多数据源获取（优先使用增强版）
+        多数据源获取（Baostock优先，其他快速失败）
         
         Args:
             stock_code: 股票代码
@@ -258,18 +260,23 @@ class RobustMultiSourceFetcher:
                 logger.debug(f"Trying {source_name} for {stock_code}")
                 
                 if source_name == 'baostock':
+                    # Baostock: 稳定快速，正常重试
                     df = self._fetch_from_baostock(stock_code, date_str)
-                else:
-                    df = fetcher.fetch_daily_data(stock_code, date_str, max_retries=3)
+                elif source_name == 'adata':
+                    # AData: 快速失败，只重试1次
+                    df = fetcher.fetch_daily_data(stock_code, date_str, max_retries=1)
+                else:  # akshare
+                    # AKShare: 快速失败，只重试1次
+                    df = fetcher.fetch_daily_data(stock_code, date_str, max_retries=1)
                 
                 if not df.empty:
                     logger.info(f"✅ {source_name} succeeded for {stock_code}")
                     return df
                 else:
-                    logger.debug(f"⚠️  {source_name} returned empty data for {stock_code}")
+                    logger.debug(f"⚠️  {source_name} returned empty data, switching to next source")
                 
             except Exception as e:
-                logger.warning(f"❌ {source_name} failed for {stock_code}: {e}")
+                logger.warning(f"❌ {source_name} failed for {stock_code}, switching to next source")
                 continue
         
         logger.error(f"All sources failed for {stock_code}")
