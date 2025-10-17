@@ -108,3 +108,4 @@ APScheduler==3.10.4
 baostock==0.8.8
 tenacity==9.1.2
 psycopg2-binary==2.9.11
+adata==2.9.4
