@@ -1,36 +1,93 @@
 """
 并发数据获取器
-使用线程池实现并发获取，预期提速 5-7倍
+使用进程池实现并发获取（Baostock 不支持线程池）
+预期提速 3-5倍
 """
 
 import logging
 import time
 from typing import List, Dict, Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import date
 import pandas as pd
 
-from app.services.enhanced_data_fetcher import robust_fetcher
-
 logger = logging.getLogger(__name__)
+
+
+def _fetch_single_stock(args):
+    """
+    获取单只股票数据（供进程池调用）
+    注意：必须是顶层函数，进程池才能序列化
+    
+    Args:
+        args: (stock_code, date_str) 元组
+    
+    Returns:
+        包含股票代码和数据的字典
+    """
+    stock_code, date_str = args
+    
+    try:
+        import baostock as bs
+        import pandas as pd
+        
+        # 每个进程独立登录
+        bs.login()
+        
+        try:
+            prefix = "sh." if stock_code.startswith('6') else "sz."
+            rs = bs.query_history_k_data_plus(
+                f"{prefix}{stock_code}",
+                "date,code,open,high,low,close,volume,amount,turn,pctChg",
+                start_date=date_str,
+                end_date=date_str
+            )
+            
+            data = []
+            while rs.error_code == '0' and rs.next():
+                data.append(rs.get_row_data())
+            
+            if data:
+                df = pd.DataFrame(data, columns=rs.fields)
+                return {
+                    'code': stock_code,
+                    'success': True,
+                    'data': df
+                }
+            else:
+                return {
+                    'code': stock_code,
+                    'success': False,
+                    'data': pd.DataFrame()
+                }
+        
+        finally:
+            bs.logout()
+    
+    except Exception as e:
+        return {
+            'code': stock_code,
+            'success': False,
+            'data': pd.DataFrame(),
+            'error': str(e)
+        }
 
 
 class ConcurrentDataFetcher:
     """
     并发数据获取器
-    使用线程池并发获取多只股票数据
+    使用进程池并发获取多只股票数据（Baostock 不支持线程池）
     """
     
-    def __init__(self, max_workers: int = 10):
+    def __init__(self, max_workers: int = 5):
         """
         初始化并发获取器
         
         Args:
-            max_workers: 最大并发线程数（默认10）
+            max_workers: 最大并发进程数（默认5，建议3-5）
         """
         self.max_workers = max_workers
-        self.fetcher = robust_fetcher
-        logger.info(f"✅ Concurrent fetcher initialized with {max_workers} workers")
+        logger.info(f"✅ Concurrent fetcher initialized with {max_workers} processes")
     
     def fetch_single(self, stock_code: str, date_str: str) -> Dict:
         """
@@ -84,12 +141,15 @@ class ConcurrentDataFetcher:
         
         start_time = time.time()
         
-        # 使用线程池并发获取
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        # 使用进程池并发获取
+        with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+            # 准备参数
+            args_list = [(code, date_str) for code in stock_codes]
+            
             # 提交所有任务
             future_to_code = {
-                executor.submit(self.fetch_single, code, date_str): code
-                for code in stock_codes
+                executor.submit(_fetch_single_stock, args): args[0]
+                for args in args_list
             }
             
             # 处理完成的任务
@@ -185,8 +245,8 @@ class ConcurrentDataFetcher:
         return data_to_insert
 
 
-# 全局实例
-concurrent_fetcher = ConcurrentDataFetcher(max_workers=10)
+# 全局实例（使用5个进程，平衡性能和资源）
+concurrent_fetcher = ConcurrentDataFetcher(max_workers=5)
 
 
 # 便捷函数
