@@ -35,9 +35,11 @@ interface QueryParams {
 export default function QueryPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DailyStockData[]>([]);
+  const [allData, setAllData] = useState<DailyStockData[]>([]);  // 存储所有数据（用于前端分页）
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [error, setError] = useState('');
+  const [frontendPage, setFrontendPage] = useState(1);  // 前端分页的当前页
   
   // 查询参数
   const [params, setParams] = useState<QueryParams>({
@@ -88,18 +90,23 @@ export default function QueryPage() {
   async function handleQuery() {
     setLoading(true);
     setError('');
+    setFrontendPage(1);  // 重置前端分页
     
     try {
-      // 如果填写了总数限制，使用限制值；否则使用默认的 page_size
-      const actualPageSize = limitInput ? parseInt(limitInput) : params.page_size;
+      // 如果填写了总数限制，需要特殊处理：
+      // 1. 先查询所有符合条件的数据（用一个大的page_size）
+      // 2. 取前N条（总数限制）
+      // 3. 然后在前端分页显示
+      const hasLimit = limitInput && parseInt(limitInput) > 0;
+      const limitValue = hasLimit ? parseInt(limitInput) : 0;
       
       const queryData: any = {
         start_date: params.start_date,
         end_date: params.end_date,
         sort_by: params.sort_by,
         sort_order: params.sort_order,
-        page: params.page,
-        page_size: actualPageSize
+        page: hasLimit ? 1 : params.page,  // 有限制时只查第1页
+        page_size: hasLimit ? limitValue : params.page_size  // 有限制时用限制值作为page_size
       };
 
       // 只有填写了涨跌幅才添加到查询条件
@@ -123,9 +130,28 @@ export default function QueryPage() {
       }
 
       const result = await response.json();
-      setData(result.data);
-      setTotal(result.total);
-      setTotalPages(result.total_pages);
+      
+      // 如果有总数限制，使用前端分页
+      if (hasLimit) {
+        setAllData(result.data);  // 保存所有数据
+        setTotal(result.data.length);  // 实际返回的数量
+        
+        // 计算前端分页
+        const pageSize = params.page_size;  // 每页50条
+        const totalPages = Math.ceil(result.data.length / pageSize);
+        setTotalPages(totalPages);
+        
+        // 显示当前页的数据
+        const startIndex = (frontendPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        setData(result.data.slice(startIndex, endIndex));
+      } else {
+        // 没有限制，使用后端分页
+        setAllData([]);
+        setData(result.data);
+        setTotal(result.total);
+        setTotalPages(result.total_pages);
+      }
       
     } catch (err: any) {
       setError(err.message || '查询失败');
@@ -136,9 +162,20 @@ export default function QueryPage() {
   }
 
   function handlePageChange(newPage: number) {
-    setParams(prev => ({ ...prev, page: newPage }));
-    // 自动触发查询
-    setTimeout(() => handleQuery(), 100);
+    const hasLimit = limitInput && parseInt(limitInput) > 0;
+    
+    if (hasLimit && allData.length > 0) {
+      // 前端分页：直接切换显示的数据
+      setFrontendPage(newPage);
+      const pageSize = params.page_size;
+      const startIndex = (newPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      setData(allData.slice(startIndex, endIndex));
+    } else {
+      // 后端分页：重新查询
+      setParams(prev => ({ ...prev, page: newPage }));
+      setTimeout(() => handleQuery(), 100);
+    }
   }
 
   function formatNumber(num: number | null | undefined): string {
@@ -156,15 +193,65 @@ export default function QueryPage() {
     return vol.toString();
   }
 
-  // 导出 Excel（与页面表格列顺序完全一致）
-  function handleExportExcel() {
+  // 导出 Excel（导出所有查询结果）
+  async function handleExportExcel() {
     if (data.length === 0) {
       alert('没有数据可导出');
       return;
     }
 
+    let dataToExport: any[] = [];
+    const hasLimit = limitInput && parseInt(limitInput) > 0;
+
+    if (hasLimit && allData.length > 0) {
+      // 有总数限制，导出所有已加载的数据
+      dataToExport = allData;
+    } else {
+      // 没有限制，需要获取所有数据
+      const loadingMsg = `正在导出 ${total} 条数据，请稍候...`;
+      if (!confirm(loadingMsg)) {
+        return;
+      }
+      
+      try {
+        const queryData: any = {
+          start_date: params.start_date,
+          end_date: params.end_date,
+          sort_by: params.sort_by,
+          sort_order: params.sort_order,
+          page: 1,
+          page_size: total  // 一次性获取所有数据
+        };
+
+        if (params.change_pct_min !== '') {
+          queryData.change_pct_min = parseFloat(params.change_pct_min);
+        }
+        if (params.change_pct_max !== '') {
+          queryData.change_pct_max = parseFloat(params.change_pct_max);
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/daily/query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(queryData)
+        });
+
+        if (!response.ok) {
+          throw new Error('获取数据失败');
+        }
+
+        const result = await response.json();
+        dataToExport = result.data;
+      } catch (err) {
+        alert('导出失败：' + (err as Error).message);
+        return;
+      }
+    }
+
     // 准备导出数据（顺序与页面表格一致）
-    const exportData = data.map(item => ({
+    const exportData = dataToExport.map(item => ({
       '日期': item.trade_date,
       '股票代码': item.stock_code,
       '股票名称': item.stock_name,
@@ -307,8 +394,8 @@ export default function QueryPage() {
                 onChange={(e) => setParams(prev => ({ ...prev, sort_order: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="desc">降序（高到低）</option>
-                <option value="asc">升序（低到高）</option>
+                <option value="desc">涨跌幅（降序）</option>
+                <option value="asc">涨跌幅（升序）</option>
               </select>
             </div>
 
@@ -366,7 +453,10 @@ export default function QueryPage() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800">
-                查询结果 <span className="text-gray-500 text-base ml-2">共 {formatNumber(total)} 条</span>
+                查询结果 
+                <span className="text-gray-500 text-base ml-2">
+                  符合条件 {formatNumber(total)} 条，当前显示 {data.length} 条
+                </span>
               </h2>
               <div className="flex items-center gap-4">
                 <button
@@ -419,39 +509,41 @@ export default function QueryPage() {
             </div>
 
             {/* 分页 */}
-            <div className="mt-6 flex justify-center items-center gap-2">
-              <button
-                onClick={() => handlePageChange(1)}
-                disabled={params.page === 1}
-                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                首页
-              </button>
-              <button
-                onClick={() => handlePageChange(params.page - 1)}
-                disabled={params.page === 1}
-                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                上一页
-              </button>
-              <span className="px-4 py-1 text-sm text-gray-700">
-                {params.page} / {totalPages}
-              </span>
-              <button
-                onClick={() => handlePageChange(params.page + 1)}
-                disabled={params.page >= totalPages}
+            {totalPages > 1 && (
+              <div className="mt-6 flex justify-center items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={(limitInput ? frontendPage : params.page) === 1}
+                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  首页
+                </button>
+                <button
+                  onClick={() => handlePageChange((limitInput ? frontendPage : params.page) - 1)}
+                  disabled={(limitInput ? frontendPage : params.page) === 1}
+                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  上一页
+                </button>
+                <span className="px-4 py-1 text-sm text-gray-700">
+                  {limitInput ? frontendPage : params.page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange((limitInput ? frontendPage : params.page) + 1)}
+                  disabled={(limitInput ? frontendPage : params.page) >= totalPages}
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 下一页
               </button>
               <button
                 onClick={() => handlePageChange(totalPages)}
-                disabled={params.page >= totalPages}
+                disabled={(limitInput ? frontendPage : params.page) >= totalPages}
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 末页
               </button>
             </div>
+            )}
           </div>
         )}
 
