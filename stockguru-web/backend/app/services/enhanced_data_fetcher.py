@@ -210,13 +210,86 @@ class EnhancedAKShareFetcher:
         return self.available
 
 
+class EnhancedTushareFetcher:
+    """增强的 Tushare 获取器"""
+    
+    def __init__(self, token=None):
+        try:
+            import tushare as ts
+            self.ts = ts
+            
+            # Tushare 免费 API 已停止更新，必须使用 Pro API
+            if token:
+                ts.set_token(token)
+                self.pro = ts.pro_api()
+                self.available = True
+                logger.info("✅ Tushare Pro API initialized")
+            else:
+                self.pro = None
+                self.available = False
+                logger.warning("⚠️  Tushare token not provided, skipping (Pro API required)")
+            
+        except ImportError:
+            logger.warning("Tushare not installed")
+            self.ts = None
+            self.pro = None
+            self.available = False
+    
+    def fetch_daily_data(self, stock_code: str, date_str: str, max_retries: int = 2) -> pd.DataFrame:
+        """
+        获取单只股票数据
+        
+        Args:
+            stock_code: 股票代码
+            date_str: 日期字符串
+            max_retries: 最大重试次数
+        
+        Returns:
+            DataFrame
+        """
+        if not self.available:
+            return pd.DataFrame()
+        
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    time.sleep(0.5 * (2 ** attempt))
+                
+                logger.debug(f"Tushare attempt {attempt + 1}/{max_retries} for {stock_code}")
+                
+                # Tushare 需要带后缀的代码
+                ts_code = f"{stock_code}.SH" if stock_code.startswith('6') else f"{stock_code}.SZ"
+                
+                # 只使用 Pro API（免费 API 已停止更新）
+                df = self.pro.daily(
+                    ts_code=ts_code,
+                    start_date=date_str.replace('-', ''),
+                    end_date=date_str.replace('-', '')
+                )
+                
+                if not df.empty:
+                    logger.info(f"✅ Tushare success: {stock_code}")
+                    return df
+                
+            except Exception as e:
+                logger.warning(f"Tushare attempt {attempt + 1} failed for {stock_code}: {e}")
+                if attempt == max_retries - 1:
+                    logger.error(f"Tushare fetch failed after {max_retries} attempts: {stock_code}")
+        
+        return pd.DataFrame()
+    
+    def is_available(self) -> bool:
+        """检查是否可用"""
+        return self.available
+
+
 class RobustMultiSourceFetcher:
     """
     健壮的多数据源获取器
-    优化：Baostock 优先（最稳定），AData/AKShare 快速失败
+    优化：Baostock 优先（最稳定），Tushare 备选，AData/AKShare 快速失败
     """
     
-    def __init__(self):
+    def __init__(self, tushare_token=None):
         self.sources = []
         
         # 优先使用 Baostock（最稳定，速度快）
@@ -229,20 +302,26 @@ class RobustMultiSourceFetcher:
         except ImportError:
             logger.warning("Baostock not available")
         
+        # Tushare 作为第二选择（稳定，需要 token）
+        tushare_fetcher = EnhancedTushareFetcher(token=tushare_token)
+        if tushare_fetcher.is_available():
+            self.sources.append(('tushare', tushare_fetcher))
+            logger.info("✅ Enhanced Tushare source loaded (Priority 2)")
+        
         # AData 作为备选（降低优先级，快速失败）
         adata_fetcher = EnhancedADataFetcher()
         if adata_fetcher.is_available():
             self.sources.append(('adata', adata_fetcher))
-            logger.info("✅ Enhanced AData source loaded (Priority 2)")
+            logger.info("✅ Enhanced AData source loaded (Priority 3)")
         
         # AKShare 作为最后选择（降低优先级，快速失败）
         akshare_fetcher = EnhancedAKShareFetcher()
         if akshare_fetcher.is_available():
             self.sources.append(('akshare', akshare_fetcher))
-            logger.info("✅ Enhanced AKShare source loaded (Priority 3)")
+            logger.info("✅ Enhanced AKShare source loaded (Priority 4)")
         
         logger.info(f"Initialized with {len(self.sources)} sources: {[s[0] for s in self.sources]}")
-        logger.info("Priority: Baostock (fast) → AData (backup) → AKShare (last)")
+        logger.info("Priority: Baostock (fast) → Tushare (stable) → AData → AKShare")
     
     def fetch_daily_data(self, stock_code: str, date_str: str) -> pd.DataFrame:
         """
@@ -262,6 +341,9 @@ class RobustMultiSourceFetcher:
                 if source_name == 'baostock':
                     # Baostock: 稳定快速，正常重试
                     df = self._fetch_from_baostock(stock_code, date_str)
+                elif source_name == 'tushare':
+                    # Tushare: 稳定，重试2次
+                    df = fetcher.fetch_daily_data(stock_code, date_str, max_retries=2)
                 elif source_name == 'adata':
                     # AData: 快速失败，只重试1次
                     df = fetcher.fetch_daily_data(stock_code, date_str, max_retries=1)
