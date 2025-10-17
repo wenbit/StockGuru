@@ -25,7 +25,7 @@ class DataSyncScheduler:
     async def sync_today_data(self):
         """
         同步今日数据的任务
-        每晚22点执行，如果失败则每小时重试
+        每晚20点执行，如果失败则每小时重试
         """
         if self.sync_in_progress:
             self.logger.info("同步任务正在进行中，跳过本次执行")
@@ -137,12 +137,12 @@ class DataSyncScheduler:
     def start(self):
         """启动调度器"""
         try:
-            # 每晚22点执行同步任务
+            # 每晚20点执行同步任务
             self.scheduler.add_job(
                 self.sync_today_data,
-                trigger=CronTrigger(hour=22, minute=0),
+                trigger=CronTrigger(hour=20, minute=0),
                 id='daily_sync',
-                name='每日22点同步数据',
+                name='每日20点同步数据',
                 replace_existing=True
             )
             
@@ -157,7 +157,7 @@ class DataSyncScheduler:
             
             self.scheduler.start()
             self.logger.info("定时任务调度器已启动")
-            self.logger.info("- 每日22点: 同步当日数据")
+            self.logger.info("- 每日20点: 同步当日数据")
             self.logger.info("- 每日8点: 检查缺失数据")
             
         except Exception as e:

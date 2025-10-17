@@ -553,8 +553,9 @@ export default function QueryPage() {
           <div className="space-y-2 text-sm text-gray-600">
             <p>• <strong>涨跌幅筛选</strong>：可填写正负值，例如 +5 表示涨幅≥5%，-3 表示跌幅≥3%</p>
             <p>• <strong>日期范围</strong>：查询指定时间范围内的所有交易日数据</p>
-            <p>• <strong>数据来源</strong>：数据每晚22点自动同步，来源于akshare（东方财富）</p>
+            <p>• <strong>数据来源</strong>：数据每晚20点自动同步，来源于 baostock（免费证券数据平台）</p>
             <p>• <strong>排序方式</strong>：默认按涨跌幅降序排列（涨幅最大的在前）</p>
+            <p>• <strong>导出功能</strong>：导出Excel时会导出所有符合条件的数据，不仅限于当前页</p>
           </div>
         </div>
       </div>
