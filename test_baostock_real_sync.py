@@ -12,23 +12,29 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'stockguru-web/backend'))
 
 def get_all_stock_codes():
-    """获取所有A股代码（使用预定义列表）"""
-    # 使用常见的A股代码作为测试样本
+    """获取所有A股代码（使用实际范围）"""
+    # 使用实际的A股代码范围
     # 实际项目中应该从数据库或API获取
     stock_codes = []
     
-    # 生成常见的股票代码
-    # 深圳主板 000001-002999
-    for i in range(1, 3000):
+    # 深圳主板 000001-002100 (实际约2000只)
+    for i in range(1, 2100):
         stock_codes.append(f"{i:06d}")
     
-    # 上海主板 600000-603999
-    for i in range(600000, 604000):
+    # 上海主板 600000-602000 (实际约2000只)
+    for i in range(600000, 602000):
         stock_codes.append(str(i))
     
-    # 创业板 300001-301999
-    for i in range(300001, 302000):
+    # 创业板 300001-301200 (实际约1200只)
+    for i in range(300001, 301200):
         stock_codes.append(str(i))
+    
+    # 科创板 688001-688600 (实际约500只)
+    for i in range(688001, 688600):
+        stock_codes.append(str(i))
+    
+    # 注: 实际A股约5900只，这里生成约5898只
+    # 真实同步时会过滤掉无效代码
     
     return stock_codes
 
