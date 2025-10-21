@@ -3,7 +3,7 @@ StockGuru FastAPI 主程序
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import screening, stock, daily_stock
+from app.api import screening, stock, daily_stock, sync_status, sync_progress
 from app.core.config import settings
 import logging
 
@@ -34,6 +34,8 @@ app.add_middleware(
 app.include_router(screening.router, prefix="/api/v1", tags=["Screening"])
 app.include_router(stock.router, prefix="/api/v1", tags=["Stock"])
 app.include_router(daily_stock.router, prefix="/api/v1/daily", tags=["Daily Stock Data"])
+app.include_router(sync_status.router, tags=["Sync Status"])
+app.include_router(sync_progress.router, tags=["Sync Progress"])
 
 # 启动事件
 @app.on_event("startup")
@@ -42,13 +44,8 @@ async def startup_event():
     logger = logging.getLogger(__name__)
     logger.info("StockGuru API 启动中...")
     
-    # 初始化数据库连接池
-    try:
-        from app.core.database import init_db_pool
-        init_db_pool()
-        logger.info("数据库连接池已初始化")
-    except Exception as e:
-        logger.error(f"初始化数据库连接池失败: {e}")
+    # 数据库连接池采用延迟初始化，首次使用时自动创建
+    logger.info("数据库连接池将在首次使用时初始化（延迟初始化）")
     
     # 启动定时任务调度器
     try:

@@ -193,96 +193,223 @@ export default function QueryPage() {
     return vol.toString();
   }
 
+  // 导出 CSV（备用方案）
+  function exportToCSV(dataToExport: any[]) {
+    console.log('使用CSV格式导出...');
+    
+    // CSV 表头
+    const headers = ['日期', '股票代码', '股票名称', '收盘价', '涨跌幅', '成交量', '成交额'];
+    
+    // CSV 数据行
+    const rows = dataToExport.map(item => [
+      item.trade_date,
+      item.stock_code,
+      item.stock_name,
+      item.close_price,
+      item.change_pct ? `${item.change_pct > 0 ? '+' : ''}${item.change_pct}%` : '-',
+      item.volume,
+      item.amount,
+    ]);
+    
+    // 组合成 CSV 字符串
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    // 添加 BOM 以支持中文
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // 创建下载链接
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `股票数据_${params.start_date}_${params.end_date}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('CSV导出成功！');
+  }
+
   // 导出 Excel（导出所有查询结果）
   async function handleExportExcel() {
-    if (data.length === 0) {
-      alert('没有数据可导出');
-      return;
-    }
-
-    let dataToExport: any[] = [];
-    const hasLimit = limitInput && parseInt(limitInput) > 0;
-
-    if (hasLimit && allData.length > 0) {
-      // 有总数限制，导出所有已加载的数据
-      dataToExport = allData;
-    } else {
-      // 没有限制，需要获取所有数据
-      const loadingMsg = `正在导出 ${total} 条数据，请稍候...`;
-      if (!confirm(loadingMsg)) {
+    try {
+      console.log('开始导出Excel...');
+      
+      if (data.length === 0) {
+        alert('没有数据可导出');
         return;
+      }
+
+      // 显示加载提示
+      const loadingDiv = document.createElement('div');
+      loadingDiv.id = 'export-loading';
+      loadingDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9999;text-align:center;';
+      loadingDiv.innerHTML = '<div style="font-size:18px;font-weight:bold;margin-bottom:10px;">正在导出数据...</div><div id="export-progress" style="color:#666;">准备中...</div>';
+      document.body.appendChild(loadingDiv);
+
+      const updateProgress = (msg: string) => {
+        const progressEl = document.getElementById('export-progress');
+        if (progressEl) progressEl.textContent = msg;
+      };
+
+      let dataToExport: any[] = [];
+      const hasLimit = limitInput && parseInt(limitInput) > 0;
+
+      if (hasLimit && allData.length > 0) {
+        // 有总数限制，导出所有已加载的数据
+        console.log(`导出已加载的数据: ${allData.length} 条`);
+        updateProgress(`准备导出 ${allData.length} 条数据...`);
+        dataToExport = allData;
+      } else {
+        // 需要获取所有数据（分批获取，每批1000条）
+        console.log(`开始获取全部数据: ${total} 条`);
+        updateProgress(`正在获取 ${total} 条数据...`);
+        
+        try {
+          const startTime = Date.now();
+          const maxPageSize = 1000; // API 限制
+          const totalPages = Math.ceil(total / maxPageSize);
+          
+          dataToExport = [];
+          
+          for (let page = 1; page <= totalPages; page++) {
+            const queryData: any = {
+              start_date: params.start_date,
+              end_date: params.end_date,
+              sort_by: params.sort_by,
+              sort_order: params.sort_order,
+              page: page,
+              page_size: maxPageSize
+            };
+
+            if (params.change_pct_min !== '') {
+              queryData.change_pct_min = parseFloat(params.change_pct_min);
+            }
+            if (params.change_pct_max !== '') {
+              queryData.change_pct_max = parseFloat(params.change_pct_max);
+            }
+
+            updateProgress(`正在获取数据... ${Math.round(page / totalPages * 100)}% (${dataToExport.length}/${total})`);
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/daily/query`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(queryData)
+            });
+
+            if (!response.ok) {
+              throw new Error(`获取数据失败: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.data && result.data.length > 0) {
+              dataToExport.push(...result.data);
+            }
+            
+            // 如果获取的数据少于请求的数量，说明已经是最后一页
+            if (!result.data || result.data.length < maxPageSize) {
+              break;
+            }
+          }
+          
+          const fetchTime = ((Date.now() - startTime) / 1000).toFixed(1);
+          console.log(`成功获取数据: ${dataToExport.length} 条，耗时: ${fetchTime}秒`);
+          
+          if (dataToExport.length === 0) {
+            throw new Error('未获取到数据');
+          }
+          
+          updateProgress(`已获取 ${dataToExport.length} 条数据，正在生成文件...`);
+        } catch (err) {
+          document.body.removeChild(loadingDiv);
+          console.error('获取数据失败:', err);
+          alert('导出失败：' + (err as Error).message);
+          return;
+        }
+      }
+
+      console.log(`准备导出 ${dataToExport.length} 条数据`);
+
+      // 使用 CSV 格式（更快更可靠）
+      updateProgress('正在生成CSV文件...');
+      
+      // 使用 setTimeout 让 UI 有机会更新
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const startExport = Date.now();
+      
+      // CSV 表头
+      const headers = ['日期', '股票代码', '股票名称', '收盘价', '涨跌幅', '成交量', '成交额'];
+      
+      // 批量处理数据（每次1000条）
+      const batchSize = 1000;
+      const csvRows: string[] = [headers.join(',')];
+      
+      for (let i = 0; i < dataToExport.length; i += batchSize) {
+        const batch = dataToExport.slice(i, i + batchSize);
+        const batchRows = batch.map(item => [
+          item.trade_date,
+          item.stock_code,
+          item.stock_name,
+          item.close_price,
+          item.change_pct ? `${item.change_pct > 0 ? '+' : ''}${item.change_pct}%` : '-',
+          item.volume || '',
+          item.amount || '',
+        ].join(','));
+        
+        csvRows.push(...batchRows);
+        
+        // 更新进度
+        const progress = Math.round((i + batch.length) / dataToExport.length * 100);
+        updateProgress(`正在处理数据... ${progress}%`);
+        
+        // 让 UI 有机会更新
+        if (i % 2000 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
       }
       
-      try {
-        const queryData: any = {
-          start_date: params.start_date,
-          end_date: params.end_date,
-          sort_by: params.sort_by,
-          sort_order: params.sort_order,
-          page: 1,
-          page_size: total  // 一次性获取所有数据
-        };
-
-        if (params.change_pct_min !== '') {
-          queryData.change_pct_min = parseFloat(params.change_pct_min);
-        }
-        if (params.change_pct_max !== '') {
-          queryData.change_pct_max = parseFloat(params.change_pct_max);
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/daily/query`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(queryData)
-        });
-
-        if (!response.ok) {
-          throw new Error('获取数据失败');
-        }
-
-        const result = await response.json();
-        dataToExport = result.data;
-      } catch (err) {
-        alert('导出失败：' + (err as Error).message);
-        return;
-      }
+      const csvContent = csvRows.join('\n');
+      const exportTime = ((Date.now() - startExport) / 1000).toFixed(1);
+      console.log(`CSV生成完成，耗时: ${exportTime}秒`);
+      
+      updateProgress('正在下载文件...');
+      
+      // 添加 BOM 以支持中文
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // 创建下载链接
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `股票数据_${params.start_date}_${params.end_date}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // 移除加载提示
+      document.body.removeChild(loadingDiv);
+      
+      console.log('导出成功！');
+      alert(`导出成功！\n已导出 ${dataToExport.length} 条数据\n文件格式：CSV（Excel可直接打开）`);
+      
+    } catch (err) {
+      // 移除加载提示
+      const loadingDiv = document.getElementById('export-loading');
+      if (loadingDiv) document.body.removeChild(loadingDiv);
+      
+      console.error('导出失败:', err);
+      alert('导出失败：' + (err as Error).message);
     }
-
-    // 准备导出数据（顺序与页面表格一致）
-    const exportData = dataToExport.map(item => ({
-      '日期': item.trade_date,
-      '股票代码': item.stock_code,
-      '股票名称': item.stock_name,
-      '收盘价': item.close_price,
-      '涨跌幅': item.change_pct ? `${item.change_pct > 0 ? '+' : ''}${item.change_pct}%` : '-',
-      '成交量': item.volume,
-      '成交额': item.amount,
-    }));
-
-    // 创建工作簿
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '股票数据');
-
-    // 设置列宽
-    const colWidths = [
-      { wch: 12 }, // 日期
-      { wch: 10 }, // 股票代码
-      { wch: 12 }, // 股票名称
-      { wch: 10 }, // 收盘价
-      { wch: 12 }, // 涨跌幅
-      { wch: 15 }, // 成交量
-      { wch: 15 }, // 成交额
-    ];
-    ws['!cols'] = colWidths;
-
-    // 生成文件名
-    const fileName = `股票数据_${params.start_date}_${params.end_date}_${new Date().getTime()}.xlsx`;
-
-    // 下载文件
-    XLSX.writeFile(wb, fileName);
   }
 
   return (
@@ -466,7 +593,7 @@ export default function QueryPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  导出 Excel
+                  导出数据
                 </button>
                 <div className="text-sm text-gray-600">
                   第 {params.page} / {totalPages} 页
@@ -553,9 +680,9 @@ export default function QueryPage() {
           <div className="space-y-2 text-sm text-gray-600">
             <p>• <strong>涨跌幅筛选</strong>：可填写正负值，例如 +5 表示涨幅≥5%，-3 表示跌幅≥3%</p>
             <p>• <strong>日期范围</strong>：查询指定时间范围内的所有交易日数据</p>
-            <p>• <strong>数据来源</strong>：数据每晚20点自动同步，来源于 baostock（免费证券数据平台）</p>
+            <p>• <strong>数据来源</strong>：数据每天19点自动同步，来源于 baostock（免费证券数据平台）</p>
             <p>• <strong>排序方式</strong>：默认按涨跌幅降序排列（涨幅最大的在前）</p>
-            <p>• <strong>导出功能</strong>：导出Excel时会导出所有符合条件的数据，不仅限于当前页</p>
+            <p>• <strong>导出功能</strong>：导出CSV格式文件（Excel可直接打开），会导出所有符合条件的数据，不仅限于当前页</p>
           </div>
         </div>
       </div>

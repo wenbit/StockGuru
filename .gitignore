@@ -34,8 +34,28 @@ ENV/
 
 # Project specific
 output/*.html
+output/*.xlsx
 data/cache/*
 *.log
+logs/*.log
+logs/.backend.pid
+logs/.frontend.pid
+
+# Environment files
+.env
+.env.local
+.env.*.local
+stockguru-web/backend/.env
+frontend/.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Test files
+test_checkpoint.json
+test_fast_checkpoint.json
 
 # OS
 .DS_Store
@@ -44,3 +64,4 @@ Thumbs.db
 # Keep directory structure
 !output/.gitkeep
 !data/cache/.gitkeep
+!logs/.gitkeep
