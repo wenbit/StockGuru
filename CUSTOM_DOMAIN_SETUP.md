@@ -2,9 +2,10 @@
 
 ## 📋 目标
 
-为 StockGuru 项目配置自定义域名：`stockguru.520178.xyz`
+为 StockGuru 项目配置自定义子域名：`stockguru.520178.xyz`
 
-- **域名**: stockguru.520178.xyz
+- **主域名**: www.520178.xyz
+- **子域名**: stockguru.520178.xyz
 - **DNS 服务商**: Cloudflare
 - **部署平台**: Vercel
 
