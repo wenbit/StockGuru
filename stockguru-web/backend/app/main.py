@@ -24,8 +24,13 @@ app = FastAPI(
 # CORS 配置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源（生产环境建议指定具体域名）
-    allow_credentials=False,  # 允许所有来源时必须设为 False
+    allow_origins=[
+        "https://stockguru.520178.xyz",  # 自定义域名
+        "https://stockguru.vercel.app",  # Vercel 默认域名
+        "http://localhost:3000",         # 本地开发
+        "http://localhost:3001",         # 本地开发备用端口
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
