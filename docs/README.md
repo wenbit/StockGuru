@@ -7,11 +7,63 @@
 ```
 docs/
 ├── README.md                    # 本文件
+├── deployment/                  # 🚀 部署文档
+├── sync/                        # 🔄 数据同步
+├── optimization/                # ⚡ 性能优化
+├── troubleshooting/             # 🔧 故障排查
 ├── reports/                     # 📊 开发报告
 ├── guides/                      # 📖 使用指南
-├── releases/                    # 🚀 版本发布
+├── releases/                    # 📋 版本发布
 └── archive/                     # 📦 历史归档
 ```
+
+## 🚀 deployment/ - 部署文档
+
+生产环境部署相关文档：
+
+- `NEON_DEPLOYMENT_GUIDE.md` - Neon 数据库部署指南
+- `SUPABASE_TO_NEON_MIGRATION.md` - Supabase 迁移到 Neon
+- `CUSTOM_DOMAIN_SETUP.md` - 自定义域名配置（详细版）
+- `DOMAIN_CONFIG_GUIDE.md` - 域名配置快速指南
+- `DEPLOYMENT_CHECKLIST.md` - 部署检查清单
+- `QUICK_DEPLOY.md` - 快速部署指南
+- `部署指南-快速开始.md` - 中文快速部署
+- `阿里云部署指南.md` - 阿里云部署方案
+
+## 🔄 sync/ - 数据同步
+
+数据同步功能相关文档：
+
+- `SYNC_GUIDE.md` - 数据同步使用指南
+- `RESUMABLE_SYNC_GUIDE.md` - 断点续传功能说明
+- `RESUMABLE_SYNC_SUMMARY.md` - 断点续传总结
+- `SYNC_RECORD_OPTIMIZATION.md` - 同步记录优化
+- `SYNC_STATUS_SUMMARY.md` - 同步状态管理
+- `BATCH_SYNC_EXPLANATION.md` - 批量同步说明
+- `TIMEZONE_FIX.md` - 时区问题修复
+- `FIX_SYNC_STATUS.md` - 同步状态修复
+
+## ⚡ optimization/ - 性能优化
+
+性能优化相关文档：
+
+- `FINAL_OPTIMIZATION_PLAN.md` - 最终优化方案
+- `FINAL_OPTIMIZATION_SUMMARY.md` - 优化总结
+- `OPTIMIZATION_IMPLEMENTED.md` - 已实施优化
+- `ADVANCED_OPTIMIZATIONS_COMPLETE.md` - 高级优化完成
+- `COPY_OPTIMIZATION_COMPLETE.md` - COPY 命令优化
+- `PRIORITY_OPTIMIZATION_REPORT.md` - 优先级优化报告
+
+## 🔧 troubleshooting/ - 故障排查
+
+常见问题和解决方案：
+
+- `FRONTEND_TROUBLESHOOTING.md` - 前端故障排查
+- `DATABASE_CONNECTION_ISSUE.md` - 数据库连接问题
+- `NETWORK_FIX_REPORT.md` - 网络问题修复
+- `EXPORT_FIX.md` - 导出功能修复
+- `EXPORT_FIX_422.md` - 422 错误修复
+- `COPY_SSL_FIX.md` - SSL 连接修复
 
 ## 📊 reports/ - 开发报告
 
@@ -86,4 +138,27 @@ docs/
 
 ---
 
-*最后更新: 2025-10-15*
+## 📌 重要文档推荐
+
+### 🚀 部署项目
+1. `deployment/NEON_DEPLOYMENT_GUIDE.md` - 完整部署流程
+2. `deployment/DOMAIN_CONFIG_GUIDE.md` - 域名配置（5分钟）
+3. `deployment/DEPLOYMENT_CHECKLIST.md` - 部署检查清单
+
+### 🔄 数据同步
+1. `sync/SYNC_GUIDE.md` - 同步功能使用
+2. `sync/RESUMABLE_SYNC_GUIDE.md` - 断点续传
+3. `sync/SYNC_RECORD_OPTIMIZATION.md` - 同步优化
+
+### 🔧 遇到问题
+1. `troubleshooting/FRONTEND_TROUBLESHOOTING.md` - 前端问题
+2. `troubleshooting/DATABASE_CONNECTION_ISSUE.md` - 数据库问题
+3. `troubleshooting/NETWORK_FIX_REPORT.md` - 网络问题
+
+### ⚡ 性能优化
+1. `optimization/FINAL_OPTIMIZATION_PLAN.md` - 优化方案
+2. `optimization/FINAL_OPTIMIZATION_SUMMARY.md` - 优化总结
+
+---
+
+*最后更新: 2025-10-21*
